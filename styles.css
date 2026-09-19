@@ -1261,61 +1261,77 @@ body.light-theme .scanner-box {
 .image-order-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: rgba(15, 23, 42, 0.72);
   color: var(--text);
   cursor: grab;
-}
-
-.drag-handle {
-  color: var(--secondary);
-  font-weight: 800;
-  letter-spacing: 1px;
   user-select: none;
 }
 
-.image-order-item.dragging {
-  opacity: 0.55;
+.image-order-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.1);
+  flex-shrink: 0;
 }
 
-.image-order-item.drag-over {
-  border-color: rgba(34, 211, 238, 0.9);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.8);
-}
-
-.image-order-item span:nth-child(2) {
+.image-order-page-num {
   font-weight: 700;
   color: var(--secondary);
-  min-width: 32px;
+  min-width: 30px;
+  font-size: 0.85rem;
 }
 
-.image-order-item span:last-child {
+.image-order-name {
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 0.88rem;
 }
 
 .order-actions {
   display: flex;
   gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .order-actions button {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(148, 163, 184, 0.08);
   color: var(--text);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  touch-action: manipulation;
+  transition: all 0.2s ease;
 }
 
-.order-actions button:hover {
-  border-color: rgba(124, 58, 237, 0.7);
+.order-actions button:hover:not(:disabled) {
+  border-color: var(--secondary);
+  background: rgba(34, 211, 238, 0.15);
+}
+
+.order-actions button:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.order-actions button.order-remove-btn:hover {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
 }
 
 @media (max-width: 980px) {
