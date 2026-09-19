@@ -188,9 +188,55 @@ body.light-theme .mini-card select {
   margin-bottom: 18px;
 }
 
-.upload-box input {
+.upload-box input[type="file"] {
   width: 100%;
-  color: var(--muted);
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(10, 17, 27, 0.9);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.upload-box input[type="file"]::file-selector-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-right: 10px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(168, 85, 247, 0.9));
+  color: white;
+  font-weight: 700;
+  font-size: 0.76rem;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.22);
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.upload-box input[type="file"]::file-selector-button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.upload-box input[type="file"]:hover {
+  border-color: rgba(96, 165, 250, 0.8);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+
+.upload-box input[type="file"]:focus-visible {
+  outline: 2px solid rgba(96, 165, 250, 0.8);
+  outline-offset: 2px;
+}
+
+body.light-theme .upload-box input[type="file"] {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+body.light-theme .upload-box input[type="file"]::file-selector-button {
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.18);
 }
 
 .result-box.success {

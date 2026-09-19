@@ -95,13 +95,6 @@ export default function App() {
                 Light
               </button>
             </div>
-            <button
-              className="ghost-button"
-              type="button"
-              onClick={() => setActive('base64')}
-            >
-              Quick start
-            </button>
           </div>
         </header>
 

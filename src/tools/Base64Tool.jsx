@@ -56,7 +56,7 @@ function formatBytes(bytes) {
 export default function Base64Tool() {
   const [tab, setTab]           = useState('text'); // 'text' | 'file'
   const [mode, setMode]         = useState('encode'); // 'encode' | 'decode'
-  const [input, setInput]       = useState('Hello, World! 🚀 Привет, мир! नमस्ते');
+  const [input, setInput]       = useState('Hello World');
   const [isUrlSafe, setIsUrlSafe] = useState(false);
   const [lineWrap, setLineWrap] = useState(0); // 0, 64, 76
   const [copied, setCopied]     = useState(false);

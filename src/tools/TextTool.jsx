@@ -104,7 +104,7 @@ function reverseText(str) {
 }
 
 export default function TextTool() {
-  const [text, setText]                 = useState('The quick brown fox jumps over the lazy dog. Smart developer utilities make everyday work fast and effortless!');
+  const [text, setText]                 = useState('The quick brown fox jumps over the lazy dog');
   const [history, setHistory]           = useState([]);
   const [copied, setCopied]             = useState(false);
 
@@ -222,6 +222,7 @@ export default function TextTool() {
       <label>
         Enter or paste text
         <textarea
+          className="code-block-input"
           rows="9"
           value={text}
           onChange={(e) => setText(e.target.value)}

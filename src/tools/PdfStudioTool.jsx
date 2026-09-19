@@ -120,7 +120,6 @@ export default function PdfStudioTool() {
     <div className="card">
       <div className="section-header">
         <h2>PDF Studio</h2>
-        <div className="status-badge success">Browser-first</div>
       </div>
 
       <div className="tool-grid">
