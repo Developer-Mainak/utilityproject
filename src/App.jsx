@@ -74,6 +74,9 @@ export default function App() {
           <div>
             <p className="eyebrow">Everything in one place</p>
             <h1>NotJustPDF — smarter file tools for work</h1>
+            <p className="subhead">
+              100% browser-native. Files stay local in your browser, no uploads, no server storage, and no data retention.
+            </p>
           </div>
           <div className="header-actions">
             <div className="pill-toggle theme-toggle" aria-label="Theme selector">

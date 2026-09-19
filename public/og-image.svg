@@ -1,0 +1,13 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#07111F"/>
+  <rect x="56" y="56" width="1088" height="518" rx="30" fill="#111C2E" stroke="#2BA3FF" stroke-width="2"/>
+  <circle cx="162" cy="180" r="42" fill="#66D9EF" fill-opacity="0.18"/>
+  <circle cx="1030" cy="420" r="56" fill="#8B5CF6" fill-opacity="0.18"/>
+  <rect x="116" y="130" width="240" height="60" rx="18" fill="#1A2C45"/>
+  <text x="150" y="170" fill="#E5F3FF" font-family="Arial, sans-serif" font-size="30" font-weight="700">NotJustPDF</text>
+  <text x="116" y="282" fill="#F8FBFF" font-family="Arial, sans-serif" font-size="62" font-weight="700">Free JSON, XML, PDF</text>
+  <text x="116" y="350" fill="#F8FBFF" font-family="Arial, sans-serif" font-size="62" font-weight="700">&amp; Developer Tools</text>
+  <text x="116" y="420" fill="#9CC7EA" font-family="Arial, sans-serif" font-size="28">Base64 • Image • QR • Validation • Utilities</text>
+  <rect x="116" y="474" width="280" height="58" rx="16" fill="#2BA3FF"/>
+  <text x="173" y="512" fill="#03131E" font-family="Arial, sans-serif" font-size="26" font-weight="700">Open Toolkit</text>
+</svg>
