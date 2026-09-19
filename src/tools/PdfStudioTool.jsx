@@ -64,7 +64,7 @@ export default function PdfStudioTool() {
       const ratio = Math.min(pw / width, ph / height) * 0.9;
       const w = width * ratio;
       const h = height * ratio;
-      doc.addImage(dataUrl, getPdfFormat(file), (pw - w) / 2, (ph - h) / 2, w, h, undefined, 'FAST');
+      doc.addImage(dataUrl, getPdfFormat(file), (pw - w) / 2, (ph - h) / 2, w, h, undefined, 'SLOW');
     }
 
     doc.save('notjustpdf-images.pdf');

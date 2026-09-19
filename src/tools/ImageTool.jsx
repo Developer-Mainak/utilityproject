@@ -31,6 +31,48 @@ const canvasBlob = (canvas, mime, q) =>
     }
   });
 
+// High-quality step-down canvas resizing to preserve crisp text and sharp details
+function getSharplyScaledCanvas(img, targetWidth, targetHeight) {
+  let currentW = img.width;
+  let currentH = img.height;
+
+  let currentCanvas = document.createElement('canvas');
+  currentCanvas.width = currentW;
+  currentCanvas.height = currentH;
+  let ctx = currentCanvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, currentW, currentH);
+
+  // If scaling down by more than 2x, step down in halves to avoid aliasing and blur
+  while (currentW * 0.5 > targetWidth && currentH * 0.5 > targetHeight) {
+    currentW = Math.round(currentW * 0.5);
+    currentH = Math.round(currentH * 0.5);
+    const nextCanvas = document.createElement('canvas');
+    nextCanvas.width = currentW;
+    nextCanvas.height = currentH;
+    const nextCtx = nextCanvas.getContext('2d');
+    nextCtx.imageSmoothingEnabled = true;
+    nextCtx.imageSmoothingQuality = 'high';
+    nextCtx.drawImage(currentCanvas, 0, 0, currentW, currentH);
+    currentCanvas = nextCanvas;
+  }
+
+  // Final draw to exact dimensions
+  if (currentW !== targetWidth || currentH !== targetHeight) {
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = targetWidth;
+    finalCanvas.height = targetHeight;
+    const finalCtx = finalCanvas.getContext('2d');
+    finalCtx.imageSmoothingEnabled = true;
+    finalCtx.imageSmoothingQuality = 'high';
+    finalCtx.drawImage(currentCanvas, 0, 0, targetWidth, targetHeight);
+    return finalCanvas;
+  }
+
+  return currentCanvas;
+}
+
 export default function ImageTool() {
   // ── Resize state ──────────────────────────────────────────────────────────
   const [resizeFile,    setResizeFile]    = useState(null);
@@ -61,8 +103,7 @@ export default function ImageTool() {
       const img     = await loadImg(dataUrl);
       const w = keepW ? img.width  : Number(resizeW);
       const h = keepH ? img.height : Number(resizeH);
-      const canvas  = Object.assign(document.createElement('canvas'), { width: w, height: h });
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const canvas = getSharplyScaledCanvas(img, w, h);
       resizedCanvas.current = canvas;
       setResizePreview(canvas.toDataURL('image/png'));
       setResizeStatus({ text: `Resized to ${w} × ${h} px`, ok: true });
@@ -81,7 +122,7 @@ export default function ImageTool() {
     a.click();
   };
 
-  // ── High-precision Reducer handler ────────────────────────────────────────
+  // ── High-Quality Document & Photo Image Reducer ────────────────────────────
   const handleOptimize = async () => {
     if (!redFile) {
       setRedStatus({ text: 'Please choose an image first.', ok: false });
@@ -89,31 +130,33 @@ export default function ImageTool() {
     }
     const targetKbNum = Math.max(1, Number(targetKB) || 250);
     const targetBytes = targetKbNum * 1024;
-    setRedStatus({ text: 'Optimizing to target size…', ok: true });
+    setRedStatus({ text: 'Optimizing while preserving maximum quality & text clarity…', ok: true });
 
     try {
       const dataUrl = await toDataUrl(redFile);
       const img     = await loadImg(dataUrl);
+      const origW   = img.width;
+      const origH   = img.height;
 
       let bestBlob = null;
+      let finalDimensions = { w: origW, h: origH };
+      let resolutionPreserved = true;
 
       if (outFormat === 'image/png') {
-        // PNG is lossless in canvas, so binary-search image scale to fit target size
+        // PNG is lossless in canvas, so file size reduction requires scaling dimensions
         let lowScale = 0.05;
         let highScale = 1.0;
 
         for (let i = 0; i < 9; i++) {
           const midScale = (lowScale + highScale) / 2;
-          const w = Math.max(1, Math.round(img.width * midScale));
-          const h = Math.max(1, Math.round(img.height * midScale));
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const w = Math.max(1, Math.round(origW * midScale));
+          const h = Math.max(1, Math.round(origH * midScale));
+          const canvas = getSharplyScaledCanvas(img, w, h);
           const blob = await canvasBlob(canvas, 'image/png');
 
           if (blob && blob.size <= targetBytes) {
             bestBlob = blob;
+            finalDimensions = { w, h };
             lowScale = midScale; // try higher resolution
           } else {
             highScale = midScale; // reduce resolution
@@ -121,66 +164,89 @@ export default function ImageTool() {
         }
 
         if (!bestBlob) {
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(img.width * 0.05));
-          canvas.height = Math.max(1, Math.round(img.height * 0.05));
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          const w = Math.max(1, Math.round(origW * 0.05));
+          const h = Math.max(1, Math.round(origH * 0.05));
+          const canvas = getSharplyScaledCanvas(img, w, h);
           bestBlob = await canvasBlob(canvas, 'image/png');
+          finalDimensions = { w, h };
         }
+        resolutionPreserved = (finalDimensions.w === origW && finalDimensions.h === origH);
       } else {
-        // JPEG / WEBP: High-precision binary search on quality (0.01 to 1.0)
-        let currentScale = 1.0;
-        let foundFit = false;
+        // JPEG / WEBP: Priority 1 is PRESERVING 100% ORIGINAL RESOLUTION (width & height)
+        // High resolution preserves fine letter edges and document text legibility!
+        const fullCanvas = document.createElement('canvas');
+        fullCanvas.width = origW;
+        fullCanvas.height = origH;
+        const fullCtx = fullCanvas.getContext('2d');
+        fullCtx.imageSmoothingEnabled = true;
+        fullCtx.imageSmoothingQuality = 'high';
+        fullCtx.drawImage(img, 0, 0, origW, origH);
 
-        // Try at current scale; if even min quality is too large, step down resolution
-        while (currentScale >= 0.1 && !foundFit) {
-          const w = Math.max(1, Math.round(img.width * currentScale));
-          const h = Math.max(1, Math.round(img.height * currentScale));
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
-          // Check max quality first
-          const maxBlob = await canvasBlob(canvas, outFormat, 0.99);
-          if (maxBlob && maxBlob.size <= targetBytes) {
-            bestBlob = maxBlob;
-            foundFit = true;
-            break;
-          }
-
-          // Check min quality
-          const minBlob = await canvasBlob(canvas, outFormat, 0.02);
-          if (minBlob && minBlob.size <= targetBytes) {
-            // Binary search 14 steps for exact quality
-            let lowQ = 0.02;
-            let highQ = 0.99;
-            bestBlob = minBlob;
+        // Check if max quality (0.98) already fits under target size
+        const maxBlob = await canvasBlob(fullCanvas, outFormat, 0.98);
+        if (maxBlob && maxBlob.size <= targetBytes) {
+          bestBlob = maxBlob;
+          finalDimensions = { w: origW, h: origH };
+        } else {
+          // Check if quality between 0.45 and 0.98 at 100% resolution fits
+          const minAcceptableBlob = await canvasBlob(fullCanvas, outFormat, 0.45);
+          if (minAcceptableBlob && minAcceptableBlob.size <= targetBytes) {
+            // Binary search 14 steps for the optimal quality at 100% original resolution
+            let lowQ = 0.45;
+            let highQ = 0.98;
+            bestBlob = minAcceptableBlob;
 
             for (let step = 0; step < 14; step++) {
               const midQ = (lowQ + highQ) / 2;
-              const testBlob = await canvasBlob(canvas, outFormat, midQ);
+              const testBlob = await canvasBlob(fullCanvas, outFormat, midQ);
               if (testBlob && testBlob.size <= targetBytes) {
                 bestBlob = testBlob;
-                lowQ = midQ; // try higher quality to get closer to target
+                lowQ = midQ; // try higher quality
               } else {
-                highQ = midQ; // too large, reduce quality
+                highQ = midQ;
               }
             }
-            foundFit = true;
-            break;
+            finalDimensions = { w: origW, h: origH };
+          } else {
+            // Only if even 45% quality at full resolution exceeds target, gently step down resolution
+            resolutionPreserved = false;
+            const candidateScales = [0.92, 0.85, 0.78, 0.70, 0.62, 0.55, 0.45, 0.35];
+
+            for (const scale of candidateScales) {
+              const w = Math.max(1, Math.round(origW * scale));
+              const h = Math.max(1, Math.round(origH * scale));
+              const canvas = getSharplyScaledCanvas(img, w, h);
+
+              const checkBlob = await canvasBlob(canvas, outFormat, 0.55);
+              if (checkBlob && checkBlob.size <= targetBytes) {
+                // Found resolution scale that fits with readable quality; binary search quality
+                let lowQ = 0.55;
+                let highQ = 0.95;
+                bestBlob = checkBlob;
+
+                for (let step = 0; step < 12; step++) {
+                  const midQ = (lowQ + highQ) / 2;
+                  const testBlob = await canvasBlob(canvas, outFormat, midQ);
+                  if (testBlob && testBlob.size <= targetBytes) {
+                    bestBlob = testBlob;
+                    lowQ = midQ;
+                  } else {
+                    highQ = midQ;
+                  }
+                }
+                finalDimensions = { w, h };
+                break;
+              }
+            }
+
+            if (!bestBlob) {
+              const w = Math.max(1, Math.round(origW * 0.25));
+              const h = Math.max(1, Math.round(origH * 0.25));
+              const canvas = getSharplyScaledCanvas(img, w, h);
+              bestBlob = await canvasBlob(canvas, outFormat, 0.50);
+              finalDimensions = { w, h };
+            }
           }
-
-          // Even lowest quality exceeds target at this resolution -> scale down
-          currentScale *= 0.75;
-        }
-
-        if (!bestBlob) {
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(img.width * 0.1));
-          canvas.height = Math.max(1, Math.round(img.height * 0.1));
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          bestBlob = await canvasBlob(canvas, outFormat, 0.05);
         }
       }
 
@@ -196,17 +262,18 @@ export default function ImageTool() {
       const achievedKb = (bestBlob.size / 1024).toFixed(1);
       const originalKb = (redFile.size / 1024).toFixed(1);
 
-      if (redFile.size <= targetBytes && bestBlob.size <= redFile.size) {
-        setRedStatus({
-          text: `Optimized: ${fmtSize(bestBlob.size)} (Original ${originalKb} KB was already ≤ target ${targetKbNum} KB)`,
-          ok: true,
-        });
+      let statusMsg = `✓ Optimized: ${achievedKb} KB (Target: ${targetKbNum} KB | Original: ${originalKb} KB). `;
+      if (resolutionPreserved) {
+        statusMsg += `Full 100% resolution preserved (${finalDimensions.w} × ${finalDimensions.h} px) for maximum sharpness.`;
       } else {
-        setRedStatus({
-          text: `Optimized: ${achievedKb} KB (Target: ${targetKbNum} KB, Original: ${originalKb} KB)`,
-          ok: true,
-        });
+        statusMsg += `Resolution: ${finalDimensions.w} × ${finalDimensions.h} px (downscaled to fit target).`;
       }
+
+      if (outFormat === 'image/png' && !resolutionPreserved) {
+        statusMsg += ' Tip: Switch to JPG/JPEG to preserve 100% full resolution and clearer text.';
+      }
+
+      setRedStatus({ text: statusMsg, ok: true });
     } catch (err) {
       setRedStatus({ text: err.message || 'Failed to optimize image.', ok: false });
     }
@@ -220,7 +287,7 @@ export default function ImageTool() {
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), {
       href: url,
-      download: `${originalName}-reduced.${ext}`,
+      download: `${originalName}-optimized.${ext}`,
     });
     a.click();
     URL.revokeObjectURL(url);
@@ -329,11 +396,17 @@ export default function ImageTool() {
           <label>
             Output format
             <select value={outFormat} onChange={(e) => setOutFormat(e.target.value)}>
-              <option value="image/jpeg">JPG / JPEG</option>
-              <option value="image/png">PNG</option>
-              <option value="image/webp">WEBP</option>
+              <option value="image/jpeg">JPG / JPEG (Best for documents &amp; photos)</option>
+              <option value="image/webp">WEBP (Modern web format)</option>
+              <option value="image/png">PNG (Lossless, larger file size)</option>
             </select>
           </label>
+
+          {outFormat === 'image/png' && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--amber)', margin: '4px 0 10px 0', lineHeight: 1.4 }}>
+              💡 Tip: PNG is lossless. For text documents and receipts, JPG/JPEG preserves 100% full resolution and crystal-clear text at 250 KB.
+            </p>
+          )}
 
           <div className="action-row compact">
             <button className="primary-button small" type="button" onClick={handleOptimize}>
