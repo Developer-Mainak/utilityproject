@@ -23,7 +23,13 @@ const fmtSize = (b) => {
 };
 
 const canvasBlob = (canvas, mime, q) =>
-  new Promise((res) => canvas.toBlob(res, mime, q));
+  new Promise((res) => {
+    if (q !== undefined) {
+      canvas.toBlob((blob) => res(blob), mime, q);
+    } else {
+      canvas.toBlob((blob) => res(blob), mime);
+    }
+  });
 
 export default function ImageTool() {
   // ── Resize state ──────────────────────────────────────────────────────────
@@ -46,7 +52,10 @@ export default function ImageTool() {
 
   // ── Resize handlers ───────────────────────────────────────────────────────
   const handleResize = async () => {
-    if (!resizeFile) { setResizeStatus({ text: 'Please choose an image first.', ok: false }); return; }
+    if (!resizeFile) {
+      setResizeStatus({ text: 'Please choose an image first.', ok: false });
+      return;
+    }
     try {
       const dataUrl = await toDataUrl(resizeFile);
       const img     = await loadImg(dataUrl);
@@ -65,42 +74,155 @@ export default function ImageTool() {
   const handleDownloadResized = () => {
     const c = resizedCanvas.current;
     if (!c) return;
-    const a = Object.assign(document.createElement('a'), { href: c.toDataURL('image/png'), download: 'resized.png' });
+    const a = Object.assign(document.createElement('a'), {
+      href: c.toDataURL('image/png'),
+      download: 'resized.png',
+    });
     a.click();
   };
 
-  // ── Reducer handlers ──────────────────────────────────────────────────────
+  // ── High-precision Reducer handler ────────────────────────────────────────
   const handleOptimize = async () => {
-    if (!redFile) { setRedStatus({ text: 'Please choose an image first.', ok: false }); return; }
-    setRedStatus({ text: 'Optimizing…', ok: true });
+    if (!redFile) {
+      setRedStatus({ text: 'Please choose an image first.', ok: false });
+      return;
+    }
+    const targetKbNum = Math.max(1, Number(targetKB) || 250);
+    const targetBytes = targetKbNum * 1024;
+    setRedStatus({ text: 'Optimizing to target size…', ok: true });
+
     try {
       const dataUrl = await toDataUrl(redFile);
       const img     = await loadImg(dataUrl);
-      const canvas  = Object.assign(document.createElement('canvas'), { width: img.width, height: img.height });
-      canvas.getContext('2d').drawImage(img, 0, 0);
 
-      const target = Number(targetKB) * 1024;
-      let blob = null;
-      for (const q of [0.95, 0.85, 0.75, 0.6, 0.45, 0.3, 0.15, 0.05]) {
-        blob = await canvasBlob(canvas, outFormat, q);
-        if (blob && blob.size <= target) break;
+      let bestBlob = null;
+
+      if (outFormat === 'image/png') {
+        // PNG is lossless in canvas, so binary-search image scale to fit target size
+        let lowScale = 0.05;
+        let highScale = 1.0;
+
+        for (let i = 0; i < 9; i++) {
+          const midScale = (lowScale + highScale) / 2;
+          const w = Math.max(1, Math.round(img.width * midScale));
+          const h = Math.max(1, Math.round(img.height * midScale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const blob = await canvasBlob(canvas, 'image/png');
+
+          if (blob && blob.size <= targetBytes) {
+            bestBlob = blob;
+            lowScale = midScale; // try higher resolution
+          } else {
+            highScale = midScale; // reduce resolution
+          }
+        }
+
+        if (!bestBlob) {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width * 0.05));
+          canvas.height = Math.max(1, Math.round(img.height * 0.05));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          bestBlob = await canvasBlob(canvas, 'image/png');
+        }
+      } else {
+        // JPEG / WEBP: High-precision binary search on quality (0.01 to 1.0)
+        let currentScale = 1.0;
+        let foundFit = false;
+
+        // Try at current scale; if even min quality is too large, step down resolution
+        while (currentScale >= 0.1 && !foundFit) {
+          const w = Math.max(1, Math.round(img.width * currentScale));
+          const h = Math.max(1, Math.round(img.height * currentScale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+          // Check max quality first
+          const maxBlob = await canvasBlob(canvas, outFormat, 0.99);
+          if (maxBlob && maxBlob.size <= targetBytes) {
+            bestBlob = maxBlob;
+            foundFit = true;
+            break;
+          }
+
+          // Check min quality
+          const minBlob = await canvasBlob(canvas, outFormat, 0.02);
+          if (minBlob && minBlob.size <= targetBytes) {
+            // Binary search 14 steps for exact quality
+            let lowQ = 0.02;
+            let highQ = 0.99;
+            bestBlob = minBlob;
+
+            for (let step = 0; step < 14; step++) {
+              const midQ = (lowQ + highQ) / 2;
+              const testBlob = await canvasBlob(canvas, outFormat, midQ);
+              if (testBlob && testBlob.size <= targetBytes) {
+                bestBlob = testBlob;
+                lowQ = midQ; // try higher quality to get closer to target
+              } else {
+                highQ = midQ; // too large, reduce quality
+              }
+            }
+            foundFit = true;
+            break;
+          }
+
+          // Even lowest quality exceeds target at this resolution -> scale down
+          currentScale *= 0.75;
+        }
+
+        if (!bestBlob) {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width * 0.1));
+          canvas.height = Math.max(1, Math.round(img.height * 0.1));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          bestBlob = await canvasBlob(canvas, outFormat, 0.05);
+        }
       }
-      if (!blob) blob = await canvasBlob(canvas, outFormat, 0.5);
-      redBlob.current = blob;
+
+      if (!bestBlob) {
+        throw new Error('Could not optimize image to target size.');
+      }
+
+      redBlob.current = bestBlob;
       if (redPreview) URL.revokeObjectURL(redPreview);
-      setRedPreview(URL.createObjectURL(blob));
-      setRedStatus({ text: `Optimized: ${fmtSize(blob.size)}`, ok: true });
-    } catch {
-      setRedStatus({ text: 'Failed to optimize image.', ok: false });
+      const previewUrl = URL.createObjectURL(bestBlob);
+      setRedPreview(previewUrl);
+
+      const achievedKb = (bestBlob.size / 1024).toFixed(1);
+      const originalKb = (redFile.size / 1024).toFixed(1);
+
+      if (redFile.size <= targetBytes && bestBlob.size <= redFile.size) {
+        setRedStatus({
+          text: `Optimized: ${fmtSize(bestBlob.size)} (Original ${originalKb} KB was already ≤ target ${targetKbNum} KB)`,
+          ok: true,
+        });
+      } else {
+        setRedStatus({
+          text: `Optimized: ${achievedKb} KB (Target: ${targetKbNum} KB, Original: ${originalKb} KB)`,
+          ok: true,
+        });
+      }
+    } catch (err) {
+      setRedStatus({ text: err.message || 'Failed to optimize image.', ok: false });
     }
   };
 
   const handleDownloadOptimized = () => {
     const blob = redBlob.current;
     if (!blob) return;
-    const ext = outFormat.split('/')[1].replace('jpeg', 'jpg');
+    const ext = outFormat === 'image/png' ? 'png' : outFormat === 'image/webp' ? 'webp' : 'jpg';
+    const originalName = redFile?.name ? redFile.name.replace(/\.[^.]+$/, '') : 'optimized';
     const url = URL.createObjectURL(blob);
-    Object.assign(document.createElement('a'), { href: url, download: `optimized.${ext}` }).click();
+    const a = Object.assign(document.createElement('a'), {
+      href: url,
+      download: `${originalName}-reduced.${ext}`,
+    });
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -113,38 +235,64 @@ export default function ImageTool() {
         <div className="mini-card">
           <h3>Image resize</h3>
           <div className="upload-box">
-            <input type="file" accept="image/*" onChange={(e) => setResizeFile(e.target.files?.[0] ?? null)} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setResizeFile(e.target.files?.[0] ?? null)}
+            />
           </div>
 
           <div className="resize-controls">
             <div className="input-pair">
-              <label>Width</label>
-              <input type="number" value={resizeW} min="1" onChange={(e) => setResizeW(e.target.value)} />
+              <label>Width (px)</label>
+              <input
+                type="number"
+                value={resizeW}
+                min="1"
+                onChange={(e) => setResizeW(e.target.value)}
+              />
             </div>
             <div className="input-pair">
-              <label>Height</label>
-              <input type="number" value={resizeH} min="1" onChange={(e) => setResizeH(e.target.value)} />
+              <label>Height (px)</label>
+              <input
+                type="number"
+                value={resizeH}
+                min="1"
+                onChange={(e) => setResizeH(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="resize-controls">
             <div className="input-pair checkbox-pair">
               <label className="checkbox-inline">
-                <input type="checkbox" checked={keepW} onChange={(e) => setKeepW(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={keepW}
+                  onChange={(e) => setKeepW(e.target.checked)}
+                />
                 Retain original width
               </label>
             </div>
             <div className="input-pair checkbox-pair">
               <label className="checkbox-inline">
-                <input type="checkbox" checked={keepH} onChange={(e) => setKeepH(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={keepH}
+                  onChange={(e) => setKeepH(e.target.checked)}
+                />
                 Retain original height
               </label>
             </div>
           </div>
 
           <div className="action-row compact">
-            <button className="primary-button small" type="button" onClick={handleResize}>Resize</button>
-            <button className="secondary-button small" type="button" onClick={handleDownloadResized}>Download</button>
+            <button className="primary-button small" type="button" onClick={handleResize}>
+              Resize
+            </button>
+            <button className="secondary-button small" type="button" onClick={handleDownloadResized}>
+              Download
+            </button>
           </div>
 
           <div className={`resize-preview-wrap${resizePreview ? ' has-image' : ''}`}>
@@ -161,13 +309,25 @@ export default function ImageTool() {
         <div className="mini-card">
           <h3>Image size reducer</h3>
           <div className="upload-box">
-            <input type="file" accept="image/*" onChange={(e) => setRedFile(e.target.files?.[0] ?? null)} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setRedFile(e.target.files?.[0] ?? null)}
+            />
           </div>
 
-          <label>Final size (KB)
-            <input type="number" min="1" step="1" value={targetKB} onChange={(e) => setTargetKB(e.target.value)} />
+          <label>
+            Target file size (KB)
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={targetKB}
+              onChange={(e) => setTargetKB(e.target.value)}
+            />
           </label>
-          <label>Output format
+          <label>
+            Output format
             <select value={outFormat} onChange={(e) => setOutFormat(e.target.value)}>
               <option value="image/jpeg">JPG / JPEG</option>
               <option value="image/png">PNG</option>
@@ -176,11 +336,17 @@ export default function ImageTool() {
           </label>
 
           <div className="action-row compact">
-            <button className="primary-button small" type="button" onClick={handleOptimize}>Optimize</button>
-            <button className="secondary-button small" type="button" onClick={handleDownloadOptimized}>Download</button>
+            <button className="primary-button small" type="button" onClick={handleOptimize}>
+              Optimize
+            </button>
+            <button className="secondary-button small" type="button" onClick={handleDownloadOptimized}>
+              Download
+            </button>
           </div>
 
-          <div className={`result-box ${redStatus.ok ? 'success' : 'error'}`}>{redStatus.text}</div>
+          <div className={`result-box ${redStatus.ok ? 'success' : 'error'}`}>
+            {redStatus.text}
+          </div>
 
           {redPreview && (
             <div className="resize-preview-wrap has-image" id="image-size-preview-wrap">

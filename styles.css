@@ -836,8 +836,7 @@ input.invalid-editor {
   position: relative;
   z-index: 1;
   background: transparent;
-  color: transparent;
-  text-shadow: 0 0 0 var(--text);
+  color: var(--text);
   caret-color: var(--text);
   border: none;
   resize: vertical;
@@ -876,7 +875,7 @@ body.light-theme .code-editor-highlight {
 }
 
 body.light-theme .code-editor-input {
-  text-shadow: 0 0 0 var(--text);
+  color: var(--text);
   caret-color: #111827;
 }
 
@@ -1080,6 +1079,35 @@ body.light-theme textarea.code-block-output[readonly] {
 
 #qr-result {
   margin-top: 14px;
+}
+
+.scanner-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.scanner-placeholder {
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: 24px;
+  text-align: center;
+}
+
+.qr-scan-decoded {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qr-scan-decoded textarea {
+  min-height: 80px;
+  margin-top: 6px;
+  word-break: break-all;
 }
 
 body.light-theme .qr-output-wrap,
