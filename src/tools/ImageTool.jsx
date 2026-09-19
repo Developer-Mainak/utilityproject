@@ -74,6 +74,9 @@ function getSharplyScaledCanvas(img, targetWidth, targetHeight) {
 }
 
 export default function ImageTool() {
+  // ── Modal zoom state ──────────────────────────────────────────────────────
+  const [modalImage, setModalImage] = useState(null); // url string
+
   // ── Resize state ──────────────────────────────────────────────────────────
   const [resizeFile,    setResizeFile]    = useState(null);
   const [resizeW,       setResizeW]       = useState(1200);
@@ -81,6 +84,7 @@ export default function ImageTool() {
   const [keepW,         setKeepW]         = useState(true);
   const [keepH,         setKeepH]         = useState(true);
   const [resizePreview, setResizePreview] = useState(null);
+  const [resizeMeta,    setResizeMeta]    = useState(null); // { w, h, size }
   const [resizeStatus,  setResizeStatus]  = useState({ text: 'Ready to resize.', ok: true });
   const resizedCanvas = useRef(null);
 
@@ -90,7 +94,47 @@ export default function ImageTool() {
   const [outFormat,     setOutFormat]     = useState('image/jpeg');
   const [redStatus,     setRedStatus]     = useState({ text: 'Ready to optimize.', ok: true });
   const [redPreview,    setRedPreview]    = useState(null);
+  const [redMeta,       setRedMeta]       = useState(null); // { label, w, h, size }
   const redBlob = useRef(null);
+
+  // ── File selection handlers (immediate preview) ───────────────────────────
+  const handleResizeFileSelect = async (file) => {
+    setResizeFile(file);
+    if (!file) {
+      setResizePreview(null);
+      setResizeMeta(null);
+      return;
+    }
+    try {
+      const dataUrl = await toDataUrl(file);
+      const img = await loadImg(dataUrl);
+      setResizeW(img.width);
+      setResizeH(img.height);
+      setResizePreview(dataUrl);
+      setResizeMeta({ label: 'Original', w: img.width, h: img.height, size: fmtSize(file.size) });
+      setResizeStatus({ text: `Loaded: ${img.width} × ${img.height} px (${fmtSize(file.size)})`, ok: true });
+    } catch {
+      setResizeStatus({ text: 'Could not read image.', ok: false });
+    }
+  };
+
+  const handleRedFileSelect = async (file) => {
+    setRedFile(file);
+    if (!file) {
+      setRedPreview(null);
+      setRedMeta(null);
+      return;
+    }
+    try {
+      const dataUrl = await toDataUrl(file);
+      const img = await loadImg(dataUrl);
+      setRedPreview(dataUrl);
+      setRedMeta({ label: 'Original Preview', w: img.width, h: img.height, size: fmtSize(file.size) });
+      setRedStatus({ text: `Loaded: ${img.width} × ${img.height} px (${fmtSize(file.size)}). Ready to optimize.`, ok: true });
+    } catch {
+      setRedStatus({ text: 'Could not read image.', ok: false });
+    }
+  };
 
   // ── Resize handlers ───────────────────────────────────────────────────────
   const handleResize = async () => {
@@ -101,12 +145,14 @@ export default function ImageTool() {
     try {
       const dataUrl = await toDataUrl(resizeFile);
       const img     = await loadImg(dataUrl);
-      const w = keepW ? img.width  : Number(resizeW);
-      const h = keepH ? img.height : Number(resizeH);
+      const w = keepW ? img.width  : Math.max(1, Number(resizeW));
+      const h = keepH ? img.height : Math.max(1, Number(resizeH));
       const canvas = getSharplyScaledCanvas(img, w, h);
       resizedCanvas.current = canvas;
-      setResizePreview(canvas.toDataURL('image/png'));
-      setResizeStatus({ text: `Resized to ${w} × ${h} px`, ok: true });
+      const previewUrl = canvas.toDataURL('image/png');
+      setResizePreview(previewUrl);
+      setResizeMeta({ label: 'Resized', w, h, size: 'Ready to download' });
+      setResizeStatus({ text: `✓ Resized to ${w} × ${h} px`, ok: true });
     } catch {
       setResizeStatus({ text: 'Failed to resize image.', ok: false });
     }
@@ -262,6 +308,13 @@ export default function ImageTool() {
       const achievedKb = (bestBlob.size / 1024).toFixed(1);
       const originalKb = (redFile.size / 1024).toFixed(1);
 
+      setRedMeta({
+        label: 'Optimized Preview',
+        w: finalDimensions.w,
+        h: finalDimensions.h,
+        size: `${achievedKb} KB`,
+      });
+
       let statusMsg = `✓ Optimized: ${achievedKb} KB (Target: ${targetKbNum} KB | Original: ${originalKb} KB). `;
       if (resolutionPreserved) {
         statusMsg += `Full 100% resolution preserved (${finalDimensions.w} × ${finalDimensions.h} px) for maximum sharpness.`;
@@ -297,6 +350,22 @@ export default function ImageTool() {
     <div className="card">
       <div className="section-header"><h2>Image tools</h2></div>
 
+      {/* ── Fullscreen Zoom Modal ────────────────────────────────────────── */}
+      {modalImage && (
+        <div className="preview-modal-overlay" onClick={() => setModalImage(null)}>
+          <div className="preview-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="preview-modal-close"
+              type="button"
+              onClick={() => setModalImage(null)}
+            >
+              ✕ Close
+            </button>
+            <img src={modalImage} alt="Full resolution inspection" />
+          </div>
+        </div>
+      )}
+
       <div className="tool-grid">
         {/* ── Image resize ────────────────────────────────────────────────── */}
         <div className="mini-card">
@@ -305,7 +374,7 @@ export default function ImageTool() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setResizeFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => handleResizeFileSelect(e.target.files?.[0] ?? null)}
             />
           </div>
 
@@ -364,7 +433,23 @@ export default function ImageTool() {
 
           <div className={`resize-preview-wrap${resizePreview ? ' has-image' : ''}`}>
             {resizePreview && (
-              <img id="resize-preview" src={resizePreview} alt="Resized preview" />
+              <>
+                <img id="resize-preview" src={resizePreview} alt="Resized preview" />
+                {resizeMeta && (
+                  <div className="preview-meta-bar">
+                    <span>
+                      <strong>{resizeMeta.label}</strong>: {resizeMeta.w} × {resizeMeta.h} px ({resizeMeta.size})
+                    </span>
+                    <button
+                      className="preview-zoom-btn"
+                      type="button"
+                      onClick={() => setModalImage(resizePreview)}
+                    >
+                      🔍 Full View
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div id="resize-status" className={`result-box ${resizeStatus.ok ? 'success' : 'error'}`}>
@@ -379,7 +464,7 @@ export default function ImageTool() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setRedFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => handleRedFileSelect(e.target.files?.[0] ?? null)}
             />
           </div>
 
@@ -421,11 +506,27 @@ export default function ImageTool() {
             {redStatus.text}
           </div>
 
-          {redPreview && (
-            <div className="resize-preview-wrap has-image" id="image-size-preview-wrap">
-              <img id="image-size-preview" src={redPreview} alt="Optimized preview" />
-            </div>
-          )}
+          <div className={`resize-preview-wrap${redPreview ? ' has-image' : ''}`} id="image-size-preview-wrap">
+            {redPreview && (
+              <>
+                <img id="image-size-preview" src={redPreview} alt="Optimized preview" />
+                {redMeta && (
+                  <div className="preview-meta-bar">
+                    <span>
+                      <strong>{redMeta.label}</strong>: {redMeta.w} × {redMeta.h} px ({redMeta.size})
+                    </span>
+                    <button
+                      className="preview-zoom-btn"
+                      type="button"
+                      onClick={() => setModalImage(redPreview)}
+                    >
+                      🔍 Full View
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
