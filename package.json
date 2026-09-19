@@ -11,10 +11,12 @@
   "dependencies": {
     "jspdf": "^2.5.1",
     "jsqr": "^1.4.0",
-    "pdfjs-dist": "^6.3.289",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "vite": "^4.5.0"
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^4.5.5"
   }
 }
