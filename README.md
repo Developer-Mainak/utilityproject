@@ -43,3 +43,7 @@ This generates a static `dist` folder ready for GitHub Pages hosting.
 4. Merge or push to the `develop` branch to trigger automatic deployment.
 
 This app is intentionally frontend-only, so there are no server APIs or backend dependencies required for deployment.
+
+## Deployment verification
+
+This project was redeployed on 2026-09-19 to confirm the GitHub Pages workflow is publishing the latest build correctly.
