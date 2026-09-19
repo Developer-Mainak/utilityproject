@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NotJustPDF is a free online toolkit for JSON and XML validation, PDF compression, image conversion, base64 encoding, and everyday developer utilities that work in the browser." />
+    <meta name="keywords" content="JSON formatter, JSON validator, XML validator, XML formatter, PDF compressor, image to PDF, base64 converter, developer tools, online utilities" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="NotJustPDF" />
+    <meta name="theme-color" content="#07111f" />
+    <meta property="og:title" content="NotJustPDF | Free JSON, XML, PDF & Developer Tools" />
+    <meta property="og:description" content="Validate and format JSON and XML, compress PDFs, convert images, and use everyday developer utilities entirely in the browser." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://your-github-username.github.io/your-repo-name/" />
+    <meta property="og:image" content="https://your-github-username.github.io/your-repo-name/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NotJustPDF" />
+    <meta name="twitter:description" content="Free browser-based JSON, XML, PDF and developer utilities." />
+    <meta name="twitter:image" content="https://your-github-username.github.io/your-repo-name/og-image.png" />
+    <link rel="canonical" href="https://your-github-username.github.io/your-repo-name/" />
+    <title>NotJustPDF | Free JSON, XML, PDF & Developer Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">N</div>
+          <div>
+            <div class="brand-title">NotJustPDF</div>
+            <div class="brand-subtitle">Smart tools for PDFs & devs</div>
+          </div>
+        </div>
+
+        <nav class="nav-stack">
+          <button class="nav-item active" data-target="base64">
+            <span class="dot cyan"></span>
+            Base64
+          </button>
+          <button class="nav-item" data-target="pdf-tools">
+            <span class="dot purple"></span>
+            PDF Studio
+          </button>
+          <button class="nav-item" data-target="media">
+            <span class="dot orange"></span>
+            Media Tools
+          </button>
+          <button class="nav-item" data-target="text-tools">
+            <span class="dot green"></span>
+            Text Tools
+          </button>
+          <button class="nav-item" data-target="json">
+            <span class="dot amber"></span>
+            JSON
+          </button>
+          <button class="nav-item" data-target="xml">
+            <span class="dot pink"></span>
+            XML
+          </button>
+          <button class="nav-item" data-target="qr-tools">
+            <span class="dot orange"></span>
+            QR Tools
+          </button>
+          <button class="nav-item" data-target="essentials">
+            <span class="dot red"></span>
+            Utilities
+          </button>
+          <button class="nav-item" data-target="syntax">
+            <span class="dot cyan"></span>
+            Syntax
+          </button>
+        </nav>
+      </aside>
+
+      <main class="content-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Everything in one place</p>
+            <h1>NotJustPDF — smarter file tools for work</h1>
+          </div>
+          <div class="header-actions">
+            <div class="pill-toggle theme-toggle" aria-label="Theme selector">
+              <button class="mode-button active" type="button" data-theme="dark">Dark</button>
+              <button class="mode-button" type="button" data-theme="light">Light</button>
+            </div>
+            <button class="ghost-button" type="button" onclick="document.querySelector('.nav-item[data-target=\'base64\']').click();">
+              Quick start
+            </button>
+          </div>
+        </header>
+
+        <section class="panel active" data-panel="base64">
+          <div class="card">
+            <div class="section-header">
+              <h2>Base64 encoder / decoder</h2>
+              <div class="pill-toggle">
+                <button class="mode-button active" type="button" data-mode="encode">Encode</button>
+                <button class="mode-button" type="button" data-mode="decode">Decode</button>
+              </div>
+            </div>
+
+            <div class="stacked-fields">
+              <label>
+                Input
+                <textarea id="base64-input" class="code-block-input" rows="8">hello world</textarea>
+              </label>
+              <label>
+                Output
+                <textarea id="base64-output" class="code-block-output" rows="8" readonly>aGVsbG8gd29ybGQ=</textarea>
+              </label>
+            </div>
+
+            <div class="action-row">
+              <button id="base64-action" class="primary-button" type="button">Encode</button>
+              <button id="copy-base64" class="secondary-button" type="button">Copy output</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="pdf-tools">
+          <div class="card">
+            <div class="section-header">
+              <h2>PDF Studio</h2>
+              <div class="status-badge success">Browser-first</div>
+            </div>
+
+            <div class="tool-grid">
+              <div class="mini-card">
+                <h3>Image to PDF</h3>
+                <div class="upload-box">
+                  <input id="pdf-image-files" type="file" accept="image/*" multiple />
+                </div>
+                <div id="pdf-image-list" class="image-gallery"></div>
+                <div class="order-controls">
+                  <label>Page order</label>
+                  <div class="order-list" id="pdf-image-order-list"></div>
+                </div>
+                <div class="action-row compact">
+                  <button id="pdf-generate" class="primary-button small" type="button">Generate PDF</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="media">
+          <div class="card">
+            <div class="section-header">
+              <h2>Image tools</h2>
+            </div>
+
+            <div class="tool-grid">
+              <div class="mini-card">
+                <h3>Image to PDF</h3>
+                <div class="upload-box">
+                  <input id="image-files" type="file" accept="image/*" multiple />
+                </div>
+                <div id="image-list" class="image-gallery"></div>
+                <div class="action-row compact">
+                  <button id="generate-pdf" class="primary-button small" type="button">Generate PDF</button>
+                </div>
+                <div class="order-controls">
+                  <label>Page order</label>
+                  <div class="order-list" id="image-order-list"></div>
+                </div>
+              </div>
+
+              <div class="mini-card">
+                <h3>Image resize</h3>
+                <div class="upload-box">
+                  <input id="resize-file" type="file" accept="image/*" />
+                </div>
+                <div class="resize-controls">
+                  <div class="input-pair">
+                    <label>Width</label>
+                    <input id="resize-width" type="number" value="1200" min="1" />
+                  </div>
+                  <div class="input-pair">
+                    <label>Height</label>
+                    <input id="resize-height" type="number" value="800" min="1" />
+                  </div>
+                </div>
+                <div class="resize-controls">
+                  <div class="input-pair checkbox-pair">
+                    <label class="checkbox-inline">
+                      <input id="retain-width" type="checkbox" checked />
+                      Retain original width
+                    </label>
+                  </div>
+                  <div class="input-pair checkbox-pair">
+                    <label class="checkbox-inline">
+                      <input id="retain-height" type="checkbox" checked />
+                      Retain original height
+                    </label>
+                  </div>
+                </div>
+                <div class="action-row compact">
+                  <button id="resize-image" class="primary-button small" type="button">Resize</button>
+                  <button id="download-resized" class="secondary-button small" type="button">Download</button>
+                </div>
+                <div id="resize-preview-wrap" class="resize-preview-wrap">
+                  <img id="resize-preview" alt="Resized preview" />
+                </div>
+                <div id="resize-status" class="result-box success">Ready to resize.</div>
+              </div>
+
+              <div class="mini-card">
+                <h3>Image size reducer</h3>
+                <div class="upload-box">
+                  <input id="image-size-reducer-file" type="file" accept="image/*" />
+                </div>
+                <label>
+                  Final size (KB)
+                  <input id="image-target-size" type="number" min="1" step="1" value="250" />
+                </label>
+                <label>
+                  Output format
+                  <select id="image-target-format">
+                    <option value="image/jpeg">JPG / JPEG</option>
+                    <option value="image/png">PNG</option>
+                    <option value="image/webp">WEBP</option>
+                  </select>
+                </label>
+                <div class="action-row compact">
+                  <button id="optimize-image-size" class="primary-button small" type="button">Optimize</button>
+                  <button id="download-optimized-image" class="secondary-button small" type="button">Download</button>
+                </div>
+                <div id="image-size-status" class="result-box success">Ready to optimize.</div>
+                <div class="resize-preview-wrap" id="image-size-preview-wrap">
+                  <img id="image-size-preview" alt="Optimized image preview" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="text-tools">
+          <div class="card">
+            <div class="section-header">
+              <h2>Text utilities</h2>
+            </div>
+
+            <label>
+              Enter text
+              <textarea id="text-tools-input" rows="12">Write your text here and transform it instantly.</textarea>
+            </label>
+
+            <div class="action-row">
+              <button id="text-uppercase" class="primary-button" type="button">UPPERCASE</button>
+              <button id="text-lowercase" class="secondary-button" type="button">lowercase</button>
+              <button id="text-titlecase" class="secondary-button" type="button">Title Case</button>
+              <button id="text-sanitize" class="secondary-button" type="button">Clean Spaces</button>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span>Words</span>
+                <strong id="word-count">0</strong>
+              </div>
+              <div class="stat-box">
+                <span>Characters</span>
+                <strong id="char-count">0</strong>
+              </div>
+              <div class="stat-box">
+                <span>Lines</span>
+                <strong id="line-count">0</strong>
+              </div>
+            </div>
+
+            <div class="action-row compact">
+              <button id="text-copy" class="secondary-button" type="button">Copy result</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="json">
+          <div class="card">
+            <div class="section-header">
+              <h2>JSON linter & formatter</h2>
+              <div id="json-status" class="status-badge success">Valid</div>
+            </div>
+
+            <label>
+              JSON input
+              <div class="code-editor-shell">
+                <div id="json-line-numbers" class="code-editor-gutter" aria-hidden="true"></div>
+                <pre id="json-editor-highlight" class="code-editor-highlight" aria-hidden="true"></pre>
+                <textarea id="json-input" class="code-editor-input" rows="12" spellcheck="false"></textarea>
+              </div>
+            </label>
+
+            <div class="action-row">
+              <button id="json-format" class="primary-button" type="button">Format</button>
+              <button id="json-minify" class="secondary-button" type="button">Minify</button>
+              <button id="json-validate" class="secondary-button" type="button">Validate</button>
+            </div>
+
+            <div id="json-status-text" class="result-box success">
+              Ready to validate.
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="xml">
+          <div class="card">
+            <div class="section-header">
+              <h2>XML validator & formatter</h2>
+              <div id="xml-status" class="status-badge success">Valid</div>
+            </div>
+
+            <label>
+              XML input
+              <div class="code-editor-shell">
+                <div id="xml-line-numbers" class="code-editor-gutter" aria-hidden="true"></div>
+                <pre id="xml-editor-highlight" class="code-editor-highlight" aria-hidden="true"></pre>
+                <textarea id="xml-input" class="code-editor-input" rows="12" spellcheck="false"></textarea>
+              </div>
+            </label>
+
+            <div class="action-row">
+              <button id="xml-format" class="primary-button" type="button">Format</button>
+              <button id="xml-validate" class="secondary-button" type="button">Validate</button>
+            </div>
+
+            <div id="xml-status-text" class="result-box success">
+              Ready to validate.
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="qr-tools">
+          <div class="card">
+            <div class="section-header">
+              <h2>QR code generator & scanner</h2>
+              <div class="status-badge success">File upload</div>
+            </div>
+
+            <div class="tool-grid qr-tool-grid">
+              <div class="mini-card">
+                <h3>Generate QR</h3>
+                <label>
+                  Text or URL
+                  <textarea id="qr-text" rows="5">https://notjustpdf.dev</textarea>
+                </label>
+                <div class="action-row compact">
+                  <button id="qr-generate" class="primary-button small" type="button">Generate</button>
+                  <button id="qr-download" class="secondary-button small" type="button">Download PNG</button>
+                </div>
+                <div class="qr-output-wrap">
+                  <canvas id="qr-output" width="220" height="220"></canvas>
+                </div>
+              </div>
+
+              <div class="mini-card">
+                <h3>Scan QR from file</h3>
+                <div class="upload-box">
+                  <input id="qr-scan-file" type="file" accept="image/*" />
+                </div>
+                <div id="qr-result" class="result-box success">Waiting for QR input.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="essentials">
+          <div class="card">
+            <div class="section-header">
+              <h2>Developer essentials</h2>
+            </div>
+
+            <div class="tool-grid">
+              <div class="mini-card">
+                <h3>URL encoder / decoder</h3>
+                <textarea id="url-input" rows="5">https://example.com/search?q=hello world</textarea>
+                <div class="action-row compact">
+                  <button id="url-encode" class="primary-button small" type="button">Encode</button>
+                  <button id="url-decode" class="secondary-button small" type="button">Decode</button>
+                </div>
+                <textarea id="url-output" rows="4" readonly></textarea>
+              </div>
+
+              <div class="mini-card">
+                <h3>UUID generator</h3>
+                <div class="action-row compact">
+                  <button id="uuid-generate" class="primary-button small" type="button">Generate</button>
+                  <button id="uuid-copy" class="secondary-button small" type="button">Copy</button>
+                </div>
+                <textarea id="uuid-output" rows="3" readonly></textarea>
+              </div>
+
+              <div class="mini-card">
+                <h3>Color converter</h3>
+                <input id="color-input" type="text" value="#7c3aed" />
+                <div class="color-preview-wrap">
+                  <div id="color-preview" class="color-preview"></div>
+                </div>
+                <div class="action-row compact">
+                  <button id="color-convert" class="primary-button small" type="button">Convert</button>
+                </div>
+                <textarea id="color-output" rows="4" readonly></textarea>
+              </div>
+
+              <div class="mini-card">
+                <h3>Timestamp converter</h3>
+                <input id="timestamp-input" type="text" value="1695148800" />
+                <div class="action-row compact">
+                  <button id="timestamp-to-date" class="primary-button small" type="button">To Date</button>
+                  <button id="date-to-timestamp" class="secondary-button small" type="button">To Unix</button>
+                </div>
+                <textarea id="timestamp-output" rows="3" readonly></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="syntax">
+          <div class="card">
+            <div class="section-header">
+              <h2>Syntax checker</h2>
+              <select id="syntax-type">
+                <option value="javascript">JavaScript</option>
+                <option value="css">CSS</option>
+                <option value="html">HTML</option>
+                <option value="json">JSON</option>
+              </select>
+            </div>
+
+            <label>
+              Source code
+              <textarea id="syntax-input" rows="12">const user = {
+  name: 'Alex',
+  role: 'developer'
+};
+
+const greet = (person) => 'Hello ' + person.name + '!';
+console.log(greet(user));</textarea>
+            </label>
+
+            <div class="action-row">
+              <button id="syntax-check" class="primary-button" type="button">Check syntax</button>
+            </div>
+
+            <div id="syntax-status" class="result-box success">
+              <span id="syntax-status-text">Ready to check.</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
