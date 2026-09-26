@@ -98,6 +98,15 @@ export default function App() {
           </div>
         </header>
 
+        <section className="seo-intro" aria-labelledby="toolkit-overview">
+          <h2 id="toolkit-overview">Free online developer tools that keep files private</h2>
+          <p>
+            Convert Base64, validate and format JSON or XML, resize images, create PDFs,
+            generate QR codes, and handle everyday text utilities directly in your browser.
+            No files are uploaded to a server.
+          </p>
+        </section>
+
         {ActivePanel && <ActivePanel />}
       </main>
     </div>

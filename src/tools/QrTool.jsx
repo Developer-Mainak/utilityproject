@@ -4,7 +4,7 @@ import jsQR from 'jsqr';
 
 export default function QrTool() {
   // ── Generate QR state ─────────────────────────────────────────────────────
-  const [qrText, setQrText]       = useState('https://notjustpdf.dev');
+  const [qrText, setQrText]       = useState('https://notjustpdf.vercel.app');
   const generateCanvasRef         = useRef(null);
 
   // ── Scan QR state ─────────────────────────────────────────────────────────
