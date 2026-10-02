@@ -101,81 +101,18 @@ export default function App() {
         <section className="seo-intro" aria-labelledby="toolkit-overview">
           <h2 id="toolkit-overview">Free browser-based developer tools — no uploads, no data stored</h2>
           <p>
-            NotJustPDF is a free online toolkit for developers and everyday users. Encode and decode
-            Base64 (including PDF files), convert images to PDF, validate JSON and XML, generate QR codes,
-            resize images, and run text utilities — all 100% in your browser with zero file uploads.
+            Encode &amp; decode Base64 (including PDFs), convert images to PDF, validate JSON &amp; XML,
+            generate QR codes, resize images — all in your browser with zero file uploads.
           </p>
-
-          <div className="seo-feature-grid" aria-label="Available tools">
-            <article className="seo-feature-card">
-              <h3>Base64 Encoder &amp; Decoder Online</h3>
-              <p>
-                Encode any text to Base64 or decode a Base64 string back to plaintext instantly.
-                Supports UTF-8, URL-safe (RFC 4648), MIME line-wrapping (64/76 chars), and
-                file-to-Base64 Data URI conversion — including PDF, images, fonts, and audio.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>Base64 PDF Converter — Encode PDF to Base64</h3>
-              <p>
-                Upload any PDF file and instantly get its Base64 encoded string or full Data URI.
-                Ideal for embedding PDFs in JSON APIs, HTML email, or web applications without
-                a file server. No upload — the conversion runs entirely in your browser.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>Image to PDF Generator — JPG, PNG, WEBP to PDF</h3>
-              <p>
-                Combine one or more images into a high-quality multi-page PDF. Supports JPG, PNG,
-                WEBP, and GIF. Drag to reorder pages, then download the PDF instantly.
-                Free, private, and no account required.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>JSON Validator &amp; Formatter</h3>
-              <p>
-                Paste raw JSON and validate its structure in real time. Pretty-print with
-                configurable indentation, minify, and spot syntax errors with highlighted line
-                numbers. Works offline after first load.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>XML Validator &amp; Pretty-Printer</h3>
-              <p>
-                Validate and format XML documents directly in your browser. Detect malformed tags,
-                unclosed elements, and encoding issues instantly — no server, no extensions needed.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>QR Code Generator &amp; Scanner</h3>
-              <p>
-                Generate QR codes from any URL, text, or data string and download as PNG.
-                Also scan QR codes from an uploaded image file — no camera permission required.
-                Completely free and private.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>Image Resizer &amp; Format Converter</h3>
-              <p>
-                Resize images to exact pixel dimensions, convert between JPG, PNG, and WEBP,
-                and adjust quality — all client-side. Your photos never leave your device.
-              </p>
-            </article>
-
-            <article className="seo-feature-card">
-              <h3>Text &amp; URL Utilities</h3>
-              <p>
-                URL encode and decode, convert text case (uppercase, lowercase, title case),
-                count words and characters, generate hashes (MD5, SHA-256), and diff two text blocks
-                — a complete text toolkit in one place.
-              </p>
-            </article>
+          <div className="seo-tool-chips" aria-label="Available tools">
+            <span className="seo-chip seo-chip--cyan"><h3>Base64 Encoder &amp; Decoder</h3></span>
+            <span className="seo-chip seo-chip--purple"><h3>Base64 PDF Converter</h3></span>
+            <span className="seo-chip seo-chip--purple"><h3>Image to PDF Generator</h3></span>
+            <span className="seo-chip seo-chip--amber"><h3>JSON Validator &amp; Formatter</h3></span>
+            <span className="seo-chip seo-chip--pink"><h3>XML Validator &amp; Formatter</h3></span>
+            <span className="seo-chip seo-chip--orange"><h3>QR Code Generator &amp; Scanner</h3></span>
+            <span className="seo-chip seo-chip--orange"><h3>Image Resizer &amp; Converter</h3></span>
+            <span className="seo-chip seo-chip--green"><h3>Text &amp; URL Utilities</h3></span>
           </div>
         </section>
 
