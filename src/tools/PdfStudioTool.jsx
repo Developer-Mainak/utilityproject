@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
 import { jsPDF } from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 
 const isImage = (f) => f && (f.type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(f.name));
+const isPdf = (f) => f && (f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
 
 const toDataUrl = (file) =>
   new Promise((res, rej) => {
@@ -26,21 +28,18 @@ const getPdfFormat = (file) => {
   return 'JPEG';
 };
 
-// Helper: Extract plain text from .docx XML structure (word/document.xml) without external heavy libs
+// Helper: Extract plain text from .docx XML structure
 async function parseDocxText(file) {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    // Use DecompressionStream or text scanning for XML text nodes
     const decoder = new TextDecoder('utf-8', { fatal: false });
     const text = decoder.decode(arrayBuffer);
-    
-    // Extract text inside <w:t> tags or fallback to cleaned text
+
     const matches = text.match(/<w:t[^>]*>(.*?)<\/w:t>/g);
     if (matches && matches.length > 0) {
       const extracted = matches
         .map((m) => m.replace(/<[^>]+>/g, ''))
         .join(' ');
-      // Clean up multiple spaces and XML entities
       return extracted
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
@@ -48,8 +47,7 @@ async function parseDocxText(file) {
         .replace(/&quot;/g, '"')
         .replace(/&apos;/g, "'");
     }
-    
-    // Fallback: strip raw XML tags from buffer text
+
     const clean = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     return clean || 'Document text extracted successfully.';
   } catch {
@@ -58,24 +56,38 @@ async function parseDocxText(file) {
 }
 
 export default function PdfStudioTool() {
-  const [tab, setTab] = useState('image'); // 'image' | 'document'
+  const [tab, setTab] = useState('image'); // 'image' | 'document' | 'merge'
 
-  // --- IMAGE TO PDF STATE ---
+  // ═══════════════════════════════════════════════
+  // 1. IMAGE TO PDF STATE
+  // ═══════════════════════════════════════════════
   const [images, setImages]   = useState([]);
   const [dragIdx, setDragIdx] = useState(null);
   const [imgStatus, setImgStatus] = useState({ text: '', ok: true });
   const imgInputRef           = useRef(null);
 
-  // --- DOCUMENT TO PDF STATE ---
-  const [docFile, setDocFile]         = useState(null); // { name, size, type, textContent }
-  const [docFont, setDocFont]         = useState('helvetica'); // 'helvetica' | 'times' | 'courier'
-  const [docFontSize, setDocFontSize] = useState(11); // 10, 11, 12, 14
-  const [docPageSize, setDocPageSize] = useState('a4'); // 'a4' | 'letter'
+  // ═══════════════════════════════════════════════
+  // 2. DOCUMENT TO PDF STATE
+  // ═══════════════════════════════════════════════
+  const [docFile, setDocFile]         = useState(null);
+  const [docFont, setDocFont]         = useState('helvetica');
+  const [docFontSize, setDocFontSize] = useState(11);
+  const [docPageSize, setDocPageSize] = useState('a4');
   const [includePageNums, setIncludePageNums] = useState(true);
-  const [docHeader, setDocHeader]     = useState('');
+  const [docHeader, setDocHeader]     = useState(''); // Default empty (no header by default)
   const [docStatus, setDocStatus]     = useState({ text: '', ok: true });
   const [isDocDragging, setIsDocDragging] = useState(false);
   const docInputRef                   = useRef(null);
+
+  // ═══════════════════════════════════════════════
+  // 3. MERGE PDFS STATE
+  // ═══════════════════════════════════════════════
+  const [pdfList, setPdfList]           = useState([]); // [{ id, name, size, pageCount, bytes }]
+  const [mergeDragIdx, setMergeDragIdx] = useState(null);
+  const [mergeFilename, setMergeFilename] = useState('merged-document');
+  const [mergeStatus, setMergeStatus]   = useState({ text: '', ok: true });
+  const [isMergeDragging, setIsMergeDragging] = useState(false);
+  const mergeInputRef                 = useRef(null);
 
   // ═══════════════════════════════════════════════
   // IMAGE TO PDF HANDLERS
@@ -176,7 +188,6 @@ export default function PdfStudioTool() {
     if (extension === 'docx' || extension === 'doc') {
       textContent = await parseDocxText(file);
     } else {
-      // Read plain text, Markdown, CSV, JSON, HTML, LOG, TXT
       const reader = new FileReader();
       textContent = await new Promise((res) => {
         reader.onload = () => res(reader.result || '');
@@ -185,7 +196,6 @@ export default function PdfStudioTool() {
       });
     }
 
-    // Set document state
     setDocFile({
       name: file.name,
       size: (file.size / 1024).toFixed(1) + ' KB',
@@ -194,7 +204,8 @@ export default function PdfStudioTool() {
       textContent: textContent.trim(),
     });
 
-    setDocHeader(file.name.replace(/\.[^/.]+$/, ''));
+    // Leave docHeader empty by default so filename is NOT printed in the header unless user types one
+    setDocHeader('');
     setDocStatus({ text: 'Document loaded successfully. Ready to convert!', ok: true });
   };
 
@@ -236,19 +247,18 @@ export default function PdfStudioTool() {
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      const margin = 45; // 45pt margins
+      const margin = 45;
       const maxLineWidth = pageWidth - margin * 2;
       const lineHeight = docFontSize * 1.45;
 
       doc.setFont(docFont, 'normal');
       doc.setFontSize(docFontSize);
 
-      // Split raw text into printable wrapped lines
       const paragraphs = docFile.textContent.split('\n');
       let lines = [];
       paragraphs.forEach((p) => {
         if (!p.trim()) {
-          lines.push(''); // Paragraph gap
+          lines.push('');
         } else {
           const wrapped = doc.splitTextToSize(p, maxLineWidth);
           lines.push(...wrapped);
@@ -256,11 +266,10 @@ export default function PdfStudioTool() {
       });
 
       let currentY = margin + 20;
-      let currentPage = 1;
 
-      // Header renderer
       const renderHeader = () => {
-        if (docHeader.trim()) {
+        // ONLY render header if docHeader has actual text entered by the user
+        if (docHeader && docHeader.trim()) {
           doc.setFontSize(9);
           doc.setTextColor(140, 150, 165);
           doc.text(docHeader.trim(), margin, margin - 15);
@@ -270,7 +279,6 @@ export default function PdfStudioTool() {
         }
       };
 
-      // Footer renderer
       const renderFooter = (pageNum, totalPages) => {
         if (includePageNums) {
           doc.setFontSize(8.5);
@@ -282,12 +290,9 @@ export default function PdfStudioTool() {
 
       renderHeader();
 
-      // Render content lines across pages
       for (let i = 0; i < lines.length; i++) {
-        // Check if page end reached
         if (currentY + lineHeight > pageHeight - margin - 25) {
           doc.addPage();
-          currentPage++;
           currentY = margin + 20;
           renderHeader();
         }
@@ -303,7 +308,6 @@ export default function PdfStudioTool() {
         currentY += lineHeight;
       }
 
-      // Add page numbers to all generated pages
       const totalPages = doc.internal.getNumberOfPages();
       for (let j = 1; j <= totalPages; j++) {
         doc.setPage(j);
@@ -319,13 +323,163 @@ export default function PdfStudioTool() {
     }
   };
 
+  // ═══════════════════════════════════════════════
+  // 3. MERGE PDFS HANDLERS
+  // ═══════════════════════════════════════════════
+  const loadPdfsForMerge = async (files) => {
+    const valid = Array.from(files).filter(isPdf);
+    if (!valid.length) {
+      setMergeStatus({ text: 'Please select valid PDF files (.pdf).', ok: false });
+      return;
+    }
+
+    setMergeStatus({ text: 'Reading PDF files…', ok: true });
+
+    try {
+      const loaded = await Promise.all(
+        valid.map(async (f) => {
+          const bytes = await f.arrayBuffer();
+          let pageCount = '?';
+          try {
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+            pageCount = pdfDoc.getPageCount();
+          } catch {
+            pageCount = '?';
+          }
+          return {
+            id: Math.random().toString(36).substring(2, 9),
+            file: f,
+            name: f.name,
+            size: (f.size / (1024 * 1024)).toFixed(2) + ' MB',
+            pageCount,
+            bytes,
+          };
+        })
+      );
+
+      setPdfList((prev) => [...prev, ...loaded]);
+      setMergeStatus({
+        text: `${loaded.length} PDF file(s) added. Arrange order and click Merge below.`,
+        ok: true,
+      });
+    } catch {
+      setMergeStatus({ text: 'Error reading PDF files.', ok: false });
+    }
+  };
+
+  const handleMergeFileUpload = (e) => {
+    loadPdfsForMerge(e.target.files);
+  };
+
+  const handleMergeDragOver = (e) => {
+    e.preventDefault();
+    setIsMergeDragging(true);
+  };
+
+  const handleMergeDragLeave = () => {
+    setIsMergeDragging(false);
+  };
+
+  const handleMergeDrop = (e) => {
+    e.preventDefault();
+    setIsMergeDragging(false);
+    loadPdfsForMerge(e.dataTransfer.files);
+  };
+
+  const moveMergePdfUp = (index) => {
+    if (index <= 0) return;
+    setPdfList((prev) => {
+      const next = [...prev];
+      const temp = next[index - 1];
+      next[index - 1] = next[index];
+      next[index] = temp;
+      return next;
+    });
+  };
+
+  const moveMergePdfDown = (index) => {
+    if (index >= pdfList.length - 1) return;
+    setPdfList((prev) => {
+      const next = [...prev];
+      const temp = next[index + 1];
+      next[index + 1] = next[index];
+      next[index] = temp;
+      return next;
+    });
+  };
+
+  const handleMergePdfDropReorder = (toIdx) => {
+    if (mergeDragIdx === null || mergeDragIdx === toIdx) return;
+    setPdfList((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(mergeDragIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
+    setMergeDragIdx(null);
+  };
+
+  const removeMergePdf = (index) => {
+    setPdfList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllMergePdfs = () => {
+    setPdfList([]);
+    if (mergeInputRef.current) mergeInputRef.current.value = '';
+    setMergeStatus({ text: 'All PDF files cleared.', ok: true });
+  };
+
+  const mergePdfs = async () => {
+    if (pdfList.length < 2) {
+      setMergeStatus({ text: 'Please add at least 2 PDF files to merge.', ok: false });
+      return;
+    }
+
+    setMergeStatus({ text: 'Merging PDF files into single document…', ok: true });
+
+    try {
+      const mergedPdf = await PDFDocument.create();
+
+      for (let i = 0; i < pdfList.length; i++) {
+        const item = pdfList[i];
+        const srcDoc = await PDFDocument.load(item.bytes, { ignoreEncryption: true });
+        const copiedPages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+
+      const filename = mergeFilename.trim().endsWith('.pdf')
+        ? mergeFilename.trim()
+        : `${mergeFilename.trim()}.pdf`;
+
+      const a = Object.assign(document.createElement('a'), {
+        href: url,
+        download: filename,
+      });
+      a.click();
+      URL.revokeObjectURL(url);
+
+      const totalPagesMerged = mergedPdf.getPageCount();
+      setMergeStatus({
+        text: `✓ Merged ${pdfList.length} PDFs (${totalPagesMerged} total pages) successfully!`,
+        ok: true,
+      });
+    } catch (err) {
+      console.error(err);
+      setMergeStatus({ text: 'Failed to merge PDFs. Ensure files are not password-protected.', ok: false });
+    }
+  };
+
   return (
     <div className="card">
       <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2>PDF Studio</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
-            Convert images, Word docs, text files, Markdown, and spreadsheets to PDF — 100% in your browser
+            Convert images, Word docs, spreadsheets to PDF &amp; merge multiple PDFs — 100% in your browser
           </p>
         </div>
 
@@ -343,6 +497,13 @@ export default function PdfStudioTool() {
             onClick={() => setTab('document')}
           >
             📄 Document to PDF
+          </button>
+          <button
+            className={`mode-button${tab === 'merge' ? ' active' : ''}`}
+            type="button"
+            onClick={() => setTab('merge')}
+          >
+            📑 Merge PDFs
           </button>
         </div>
       </div>
@@ -448,12 +609,11 @@ export default function PdfStudioTool() {
             )}
           </div>
         </div>
-      ) : (
+      ) : tab === 'document' ? (
         /* ═══════════════════════════════════════════════
            DOCUMENT TO PDF SECTION
         ════════════════════════════════════════════════ */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Upload Zone */}
           <div
             className="upload-box"
             style={{
@@ -488,7 +648,6 @@ export default function PdfStudioTool() {
 
           {docFile && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Document Overview Bar */}
               <div className="preview-meta-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <span>
                   <strong>{docFile.name}</strong> ({docFile.size}) — <code>{docFile.extension.toUpperCase()}</code>
@@ -503,7 +662,6 @@ export default function PdfStudioTool() {
                 </button>
               </div>
 
-              {/* PDF Settings Panel */}
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '10px', border: '1px solid var(--line)' }}>
                 <h4 style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text)', fontWeight: 600 }}>
                   ⚙️ PDF Page &amp; Styling Options
@@ -557,13 +715,13 @@ export default function PdfStudioTool() {
 
                   <div>
                     <label style={{ fontSize: '0.78rem', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>
-                      Header Title
+                      Header Title (Optional)
                     </label>
                     <input
                       type="text"
                       value={docHeader}
                       onChange={(e) => setDocHeader(e.target.value)}
-                      placeholder="Header title..."
+                      placeholder="Leave blank for no header"
                       style={{ width: '100%', minHeight: '34px', padding: '4px 8px', fontSize: '0.82rem' }}
                     />
                   </div>
@@ -581,7 +739,6 @@ export default function PdfStudioTool() {
                 </div>
               </div>
 
-              {/* Text Preview Box */}
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
                   Document Text Preview ({docFile.textContent.length} characters)
@@ -596,7 +753,6 @@ export default function PdfStudioTool() {
                 />
               </div>
 
-              {/* Generate PDF Button */}
               <div className="action-row compact">
                 <button
                   className="primary-button"
@@ -612,6 +768,142 @@ export default function PdfStudioTool() {
           {docStatus.text && (
             <div className={`result-box ${docStatus.ok ? 'success' : 'error'}`}>
               {docStatus.text}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ═══════════════════════════════════════════════
+           MERGE PDFS SECTION
+        ════════════════════════════════════════════════ */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            className="upload-box"
+            style={{
+              textAlign: 'center',
+              padding: '28px 20px',
+              border: isMergeDragging ? '2px dashed var(--secondary)' : '2px dashed var(--line)',
+              background: isMergeDragging ? 'rgba(34, 211, 238, 0.05)' : undefined,
+              borderRadius: '12px',
+              transition: 'all 0.2s',
+              cursor: 'pointer',
+            }}
+            onDragOver={handleMergeDragOver}
+            onDragLeave={handleMergeDragLeave}
+            onDrop={handleMergeDrop}
+            onClick={() => mergeInputRef.current?.click()}
+          >
+            <input
+              ref={mergeInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleMergeFileUpload}
+            />
+            <div style={{ fontSize: '2.2rem', marginBottom: '6px' }}>📑</div>
+            <strong style={{ fontSize: '0.95rem', color: 'var(--text)' }}>
+              Drag &amp; drop multiple PDF files here, or click to browse
+            </strong>
+            <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+              Select 2 or more PDF files to merge into a single, unified PDF document
+            </p>
+          </div>
+
+          {pdfList.length > 0 && (
+            <div className="order-controls">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label style={{ margin: 0 }}>
+                  PDF Merge Sequence ({pdfList.length} file{pdfList.length === 1 ? '' : 's'})
+                </label>
+                <button
+                  className="secondary-button small"
+                  type="button"
+                  onClick={clearAllMergePdfs}
+                  style={{ padding: '3px 10px', fontSize: '0.75rem' }}
+                >
+                  Clear all
+                </button>
+              </div>
+
+              <div className="order-list">
+                {pdfList.map((item, i) => (
+                  <div
+                    key={item.id}
+                    className={`image-order-item${mergeDragIdx === i ? ' dragging' : ''}`}
+                    draggable
+                    onDragStart={() => setMergeDragIdx(i)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleMergePdfDropReorder(i)}
+                    onDragEnd={() => setMergeDragIdx(null)}
+                  >
+                    <span className="drag-handle" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
+                    <span style={{ fontSize: '1.2rem', marginRight: '6px' }}>📄</span>
+                    <span className="image-order-page-num">#{i + 1}</span>
+                    <span className="image-order-name" title={item.name}>
+                      <strong>{item.name}</strong> ({item.size}) — {item.pageCount} {item.pageCount === 1 ? 'page' : 'pages'}
+                    </span>
+
+                    <div className="order-actions">
+                      <button
+                        type="button"
+                        title="Move Up"
+                        disabled={i === 0}
+                        onClick={() => moveMergePdfUp(i)}
+                        aria-label={`Move PDF ${i + 1} up`}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        title="Move Down"
+                        disabled={i === pdfList.length - 1}
+                        onClick={() => moveMergePdfDown(i)}
+                        aria-label={`Move PDF ${i + 1} down`}
+                      >
+                        ▼
+                      </button>
+                      <button
+                        type="button"
+                        title="Remove file"
+                        className="order-remove-btn"
+                        onClick={() => removeMergePdf(i)}
+                        aria-label={`Remove PDF ${i + 1}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '200px' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>Output Filename:</label>
+                  <input
+                    type="text"
+                    value={mergeFilename}
+                    onChange={(e) => setMergeFilename(e.target.value)}
+                    placeholder="merged-document"
+                    style={{ minHeight: '34px', padding: '4px 10px', fontSize: '0.82rem' }}
+                  />
+                </div>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  style={{ alignSelf: 'flex-end', minHeight: '34px' }}
+                  onClick={mergePdfs}
+                  disabled={pdfList.length < 2}
+                >
+                  🔗 Merge {pdfList.length} PDFs
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mergeStatus.text && (
+            <div className={`result-box ${mergeStatus.ok ? 'success' : 'error'}`}>
+              {mergeStatus.text}
             </div>
           )}
         </div>
