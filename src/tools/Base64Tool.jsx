@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 
-// Industry-grade UTF-8 safe Base64 encoder (handles emojis, unicode, international chars)
+// UTF-8 safe Base64 encoder
 function utf8ToBase64(str, isUrlSafe = false, lineWrap = 0) {
   if (!str) return '';
   const bytes = new TextEncoder().encode(str);
@@ -23,11 +23,10 @@ function utf8ToBase64(str, isUrlSafe = false, lineWrap = 0) {
   return b64;
 }
 
-// Industry-grade UTF-8 safe Base64 decoder
+// UTF-8 safe Base64 decoder
 function base64ToUtf8(b64) {
   if (!b64) return '';
   try {
-    // Normalize url-safe characters and add padding if missing
     let clean = b64.trim().replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
     while (clean.length % 4 !== 0) {
       clean += '=';
@@ -48,9 +47,27 @@ function getByteLength(str) {
 }
 
 function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+// Extract MIME type from Data URI or infer from Base64 header
+function detectMimeType(str) {
+  if (!str) return 'application/octet-stream';
+  const match = str.trim().match(/^data:([^;]+);base64,/i);
+  if (match) return match[1];
+
+  const clean = str.trim().replace(/\s+/g, '');
+  if (clean.startsWith('JVBERi0')) return 'application/pdf';
+  if (clean.startsWith('iVBORw0KGgo')) return 'image/png';
+  if (clean.startsWith('/9j/')) return 'image/jpeg';
+  if (clean.startsWith('R0lGOD')) return 'image/gif';
+  if (clean.startsWith('UklGR')) return 'image/webp';
+  if (clean.startsWith('UEsDB')) return 'application/zip';
+
+  return 'application/octet-stream';
 }
 
 export default function Base64Tool() {
@@ -58,15 +75,20 @@ export default function Base64Tool() {
   const [mode, setMode]         = useState('encode'); // 'encode' | 'decode'
   const [input, setInput]       = useState('Hello World');
   const [isUrlSafe, setIsUrlSafe] = useState(false);
-  const [lineWrap, setLineWrap] = useState(0); // 0, 64, 76
-  const [copied, setCopied]     = useState(false);
+  const [lineWrap, setLineWrap] = useState(0);
+  const [copiedText, setCopiedText] = useState('');
 
-  // File mode state
+  // File to Base64 state
+  const [fileMode, setFileMode] = useState('file-to-b64'); // 'file-to-b64' | 'b64-to-file'
   const [fileData, setFileData] = useState(null); // { name, size, type, dataUrl, rawBase64 }
-  const [fileCopied, setFileCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef            = useRef(null);
 
-  // Live output calculation
+  // Base64 to File state
+  const [b64FileInput, setB64FileInput] = useState('');
+  const [downloadFilename, setDownloadFilename] = useState('decoded-file');
+
+  // Live text mode calculation
   const output = useMemo(() => {
     if (!input) return '';
     if (mode === 'encode') {
@@ -89,11 +111,11 @@ export default function Base64Tool() {
     };
   }, [input, output]);
 
-  const handleCopy = async (textToCopy) => {
-    if (!textToCopy) return;
-    await navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const copyToClipboard = async (text, label) => {
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    setTimeout(() => setCopiedText(''), 1800);
   };
 
   const handleSwap = () => {
@@ -110,11 +132,9 @@ export default function Base64Tool() {
     }
   };
 
-  // File upload handler
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
+  // Process selected file
+  const processFile = (file) => {
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;
@@ -122,6 +142,7 @@ export default function Base64Tool() {
       setFileData({
         name: file.name,
         size: formatBytes(file.size),
+        rawSizeBytes: file.size,
         type: file.type || 'application/octet-stream',
         dataUrl,
         rawBase64,
@@ -130,24 +151,81 @@ export default function Base64Tool() {
     reader.readAsDataURL(file);
   };
 
-  const handleDownloadFileFromBase64 = () => {
-    if (!output || output.startsWith('Error:')) return;
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    processFile(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    processFile(file);
+  };
+
+  // Download raw Base64 string as .txt file
+  const handleDownloadBase64Txt = () => {
+    if (!fileData?.rawBase64) return;
+    const blob = new Blob([fileData.rawBase64], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), {
+      href: url,
+      download: `${fileData.name}.base64.txt`,
+    });
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Download Base64 string back to binary file (PDF, Image, etc.)
+  const handleDownloadFileFromB64Input = () => {
+    if (!b64FileInput.trim()) return;
     try {
-      let clean = output.trim().replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
+      let raw = b64FileInput.trim();
+      if (raw.includes(',')) {
+        raw = raw.split(',')[1] || '';
+      }
+      let clean = raw.replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
       while (clean.length % 4 !== 0) clean += '=';
+
       const bin = atob(clean);
       const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'application/octet-stream' });
+      for (let i = 0; i < bin.length; i++) {
+        bytes[i] = bin.charCodeAt(i);
+      }
+
+      const mime = detectMimeType(b64FileInput);
+      const blob = new Blob([bytes], { type: mime });
       const url = URL.createObjectURL(blob);
+
+      let ext = '.bin';
+      if (mime === 'application/pdf') ext = '.pdf';
+      else if (mime === 'image/png') ext = '.png';
+      else if (mime === 'image/jpeg') ext = '.jpg';
+      else if (mime === 'image/gif') ext = '.gif';
+      else if (mime === 'image/webp') ext = '.webp';
+      else if (mime === 'application/zip') ext = '.zip';
+
+      const filename = downloadFilename.trim().endsWith(ext)
+        ? downloadFilename.trim()
+        : `${downloadFilename.trim()}${ext}`;
+
       const a = Object.assign(document.createElement('a'), {
         href: url,
-        download: 'decoded-file.bin',
+        download: filename,
       });
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert('Cannot download: output does not contain valid binary Base64.');
+      alert('Failed to decode: Invalid Base64 data string.');
     }
   };
 
@@ -157,7 +235,7 @@ export default function Base64Tool() {
         <div>
           <h2>Base64 Studio</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
-            UTF-8 safe encoder, URL-safe (RFC 4648), line wrapping, and file converter
+            UTF-8 safe text encoder/decoder &amp; complete file-to-Base64 converter (PDF, images, audio, docs)
           </p>
         </div>
 
@@ -174,12 +252,13 @@ export default function Base64Tool() {
             type="button"
             onClick={() => setTab('file')}
           >
-            File to Base64
+            File Mode
           </button>
         </div>
       </div>
 
       {tab === 'text' ? (
+        /* TEXT MODE */
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
             <div className="pill-toggle">
@@ -188,14 +267,14 @@ export default function Base64Tool() {
                 type="button"
                 onClick={() => setMode('encode')}
               >
-                Encode
+                Encode Text
               </button>
               <button
                 className={`mode-button${mode === 'decode' ? ' active' : ''}`}
                 type="button"
                 onClick={() => setMode('decode')}
               >
-                Decode
+                Decode Base64
               </button>
             </div>
 
@@ -268,8 +347,8 @@ export default function Base64Tool() {
 
           <div className="action-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button className="primary-button small" type="button" onClick={() => handleCopy(output)}>
-                {copied ? '✓ Copied!' : 'Copy Output'}
+              <button className="primary-button small" type="button" onClick={() => copyToClipboard(output, 'output')}>
+                {copiedText === 'output' ? '✓ Copied!' : 'Copy Output'}
               </button>
               <button className="secondary-button small" type="button" onClick={handleSwap} title="Swap output into input">
                 ⇄ Swap
@@ -281,78 +360,216 @@ export default function Base64Tool() {
                 Clear
               </button>
             </div>
-
-            {mode === 'encode' && output && (
-              <button
-                className="secondary-button small"
-                type="button"
-                onClick={handleDownloadFileFromBase64}
-                title="Download encoded output as binary file"
-              >
-                Download as File
-              </button>
-            )}
           </div>
         </>
       ) : (
-        /* File to Base64 Mode */
+        /* FILE MODE */
         <div>
-          <div className="upload-box" style={{ textAlign: 'center', padding: '24px' }}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileUpload}
-            />
-            <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: 'var(--muted)' }}>
-              Upload any file (image, PDF, SVG, font, audio, binary) to convert to Base64 Data URI
-            </p>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+            <div className="pill-toggle">
+              <button
+                className={`mode-button${fileMode === 'file-to-b64' ? ' active' : ''}`}
+                type="button"
+                onClick={() => setFileMode('file-to-b64')}
+              >
+                Encode File ➔ Base64
+              </button>
+              <button
+                className={`mode-button${fileMode === 'b64-to-file' ? ' active' : ''}`}
+                type="button"
+                onClick={() => setFileMode('b64-to-file')}
+              >
+                Decode Base64 ➔ File
+              </button>
+            </div>
           </div>
 
-          {fileData && (
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div className="preview-meta-bar">
-                <span><strong>{fileData.name}</strong> ({fileData.size}) — <code>{fileData.type}</code></span>
-                <span className="meta-counter-badge">Base64: {formatBytes(fileData.rawBase64.length)}</span>
+          {fileMode === 'file-to-b64' ? (
+            /* File to Base64 Encoder */
+            <div>
+              <div
+                className="upload-box"
+                style={{
+                  textAlign: 'center',
+                  padding: '28px 20px',
+                  border: isDragging ? '2px dashed var(--secondary)' : '2px dashed var(--line)',
+                  background: isDragging ? 'rgba(34, 211, 238, 0.05)' : undefined,
+                  borderRadius: '12px',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer',
+                }}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  style={{ display: 'none' }}
+                  onChange={handleFileUpload}
+                />
+                <div style={{ fontSize: '2.2rem', marginBottom: '6px' }}>📁</div>
+                <strong style={{ fontSize: '0.95rem', color: 'var(--text)' }}>
+                  Drag &amp; drop any file here, or click to browse
+                </strong>
+                <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                  Supports PDF, Images (PNG, JPG, WEBP, SVG), Audio, Fonts, ZIP, and all binary files
+                </p>
               </div>
 
-              {fileData.type.startsWith('image/') && (
-                <div style={{ textAlign: 'center', padding: '10px', background: 'rgba(10, 18, 30, 0.8)', borderRadius: '12px' }}>
-                  <img
-                    src={fileData.dataUrl}
-                    alt="Preview"
-                    style={{ maxHeight: '180px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
-                  />
+              {fileData && (
+                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div className="preview-meta-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span>
+                      <strong>{fileData.name}</strong> ({fileData.size}) — <code>{fileData.type}</code>
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span className="meta-counter-badge">
+                        Base64 Size: {formatBytes(fileData.rawBase64.length)}
+                      </span>
+                      <button
+                        className="secondary-button small"
+                        type="button"
+                        style={{ padding: '2px 8px', fontSize: '0.75rem' }}
+                        onClick={() => setFileData(null)}
+                      >
+                        ✕ Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Media Preview (Image, PDF indicator, Audio) */}
+                  {fileData.type.startsWith('image/') && (
+                    <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(10, 18, 30, 0.8)', borderRadius: '10px' }}>
+                      <img
+                        src={fileData.dataUrl}
+                        alt="File Preview"
+                        style={{ maxHeight: '180px', maxWidth: '100%', objectFit: 'contain', borderRadius: '6px' }}
+                      />
+                    </div>
+                  )}
+
+                  {fileData.type === 'application/pdf' && (
+                    <div style={{ padding: '14px', background: 'rgba(124, 58, 237, 0.08)', border: '1px solid rgba(124, 58, 237, 0.25)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '2rem' }}>📄</span>
+                      <div>
+                        <strong style={{ color: '#a78bfa', fontSize: '0.9rem' }}>PDF File Encoded Successfully</strong>
+                        <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--muted)' }}>
+                          Ready to embed in HTML, JSON APIs, or send via Webhook as Base64 Data URI.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {fileData.type.startsWith('audio/') && (
+                    <div style={{ padding: '10px', background: 'rgba(10, 18, 30, 0.8)', borderRadius: '10px', textAlign: 'center' }}>
+                      <audio controls src={fileData.dataUrl} style={{ width: '100%', maxHeight: '40px' }} />
+                    </div>
+                  )}
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 600 }}>
+                        Data URI (Ready to embed in <code>&lt;img&gt;</code>, <code>&lt;embed&gt;</code>, or CSS)
+                      </label>
+                      <button
+                        className="primary-button small"
+                        type="button"
+                        onClick={() => copyToClipboard(fileData.dataUrl, 'dataUri')}
+                      >
+                        {copiedText === 'dataUri' ? '✓ Copied!' : 'Copy Data URI'}
+                      </button>
+                    </div>
+                    <textarea
+                      className="code-block-output"
+                      rows="4"
+                      readOnly
+                      value={fileData.dataUrl}
+                      spellCheck="false"
+                    />
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 600 }}>
+                        Raw Base64 String (Without Data URI prefix)
+                      </label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="secondary-button small"
+                          type="button"
+                          onClick={() => copyToClipboard(fileData.rawBase64, 'rawB64')}
+                        >
+                          {copiedText === 'rawB64' ? '✓ Copied!' : 'Copy Raw Base64'}
+                        </button>
+                        <button
+                          className="secondary-button small"
+                          type="button"
+                          onClick={handleDownloadBase64Txt}
+                        >
+                          Save as .txt
+                        </button>
+                      </div>
+                    </div>
+                    <textarea
+                      className="code-block-output"
+                      rows="4"
+                      readOnly
+                      value={fileData.rawBase64}
+                      spellCheck="false"
+                    />
+                  </div>
                 </div>
               )}
-
+            </div>
+          ) : (
+            /* Base64 to File Decoder */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', marginBottom: '6px' }}>
-                  Data URI (Ready to paste in <code>&lt;img src="..."&gt;</code> or CSS)
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
+                  Paste Base64 String or Data URI (PDF, PNG, JPG, ZIP, etc.)
                 </label>
                 <textarea
-                  className="code-block-output"
-                  rows="4"
-                  readOnly
-                  value={fileData.dataUrl}
+                  className="code-block-input"
+                  rows="8"
+                  value={b64FileInput}
+                  onChange={(e) => setB64FileInput(e.target.value)}
+                  placeholder="Paste base64 string (e.g. JVBERi0xLj... or data:application/pdf;base64,...)"
                   spellCheck="false"
                 />
-                <div className="action-row compact">
+              </div>
+
+              {b64FileInput.trim() && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', border: '1px solid var(--line)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>Detected Format:</span>
+                    <code style={{ fontSize: '0.82rem', color: 'var(--secondary)' }}>
+                      {detectMimeType(b64FileInput)}
+                    </code>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '180px' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>Output Filename:</span>
+                    <input
+                      type="text"
+                      value={downloadFilename}
+                      onChange={(e) => setDownloadFilename(e.target.value)}
+                      placeholder="e.g. document"
+                      style={{ padding: '4px 10px', fontSize: '0.82rem', minHeight: '34px' }}
+                    />
+                  </div>
+
                   <button
                     className="primary-button small"
                     type="button"
-                    onClick={() => handleCopy(fileData.dataUrl)}
+                    style={{ alignSelf: 'flex-end', minHeight: '34px' }}
+                    onClick={handleDownloadFileFromB64Input}
                   >
-                    Copy Data URI
-                  </button>
-                  <button
-                    className="secondary-button small"
-                    type="button"
-                    onClick={() => handleCopy(fileData.rawBase64)}
-                  >
-                    Copy Raw Base64
+                    ⬇ Download Original File
                   </button>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
