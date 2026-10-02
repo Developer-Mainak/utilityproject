@@ -50,7 +50,7 @@ export default function App() {
           <div className="brand-mark">N</div>
           <div>
             <div className="brand-title">NotJustPDF</div>
-            <div className="brand-subtitle">Smart tools for PDFs &amp; devs</div>
+            <div className="brand-subtitle">Tools for Developers &amp; Everyday Use</div>
           </div>
         </div>
 
