@@ -73,9 +73,9 @@ export default function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">Everything in one place</p>
-            <h1>NotJustPDF — smarter file tools for work</h1>
+            <h1>NotJustPDF — Free Online Base64, PDF &amp; Developer Tools</h1>
             <p className="subhead">
-              100% browser-native. Files stay local in your browser, no uploads, no server storage, and no data retention.
+              100% browser-native &amp; private. Convert Base64 (text &amp; PDF files), create PDFs from images, validate JSON &amp; XML, generate QR codes, and resize media — all locally in your browser with zero file uploads.
             </p>
           </div>
           <div className="header-actions">
@@ -97,24 +97,6 @@ export default function App() {
             </div>
           </div>
         </header>
-
-        <section className="seo-intro" aria-labelledby="toolkit-overview">
-          <h2 id="toolkit-overview">Free browser-based developer tools — no uploads, no data stored</h2>
-          <p>
-            Encode &amp; decode Base64 (including PDFs), convert images to PDF, validate JSON &amp; XML,
-            generate QR codes, resize images — all in your browser with zero file uploads.
-          </p>
-          <div className="seo-tool-chips" aria-label="Available tools">
-            <span className="seo-chip seo-chip--cyan"><h3>Base64 Encoder &amp; Decoder</h3></span>
-            <span className="seo-chip seo-chip--purple"><h3>Base64 PDF Converter</h3></span>
-            <span className="seo-chip seo-chip--purple"><h3>Image to PDF Generator</h3></span>
-            <span className="seo-chip seo-chip--amber"><h3>JSON Validator &amp; Formatter</h3></span>
-            <span className="seo-chip seo-chip--pink"><h3>XML Validator &amp; Formatter</h3></span>
-            <span className="seo-chip seo-chip--orange"><h3>QR Code Generator &amp; Scanner</h3></span>
-            <span className="seo-chip seo-chip--orange"><h3>Image Resizer &amp; Converter</h3></span>
-            <span className="seo-chip seo-chip--green"><h3>Text &amp; URL Utilities</h3></span>
-          </div>
-        </section>
 
         {ActivePanel && <ActivePanel />}
       </main>
