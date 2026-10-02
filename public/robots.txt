@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# Block build artifacts
+Disallow: /dist/
+
+# Sitemap
 Sitemap: https://notjustpdf.vercel.app/sitemap.xml

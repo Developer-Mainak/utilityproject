@@ -3,70 +3,176 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="NotJustPDF is a browser-native developer toolkit for JSON and XML validation, image conversion, Base64 encoding, QR tools, and PDF workflows. Files stay in your browser and nothing is uploaded or stored." />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <!-- ═══════════════════════════════════════════════
+         PRIMARY SEO META TAGS
+    ════════════════════════════════════════════════ -->
+    <title>NotJustPDF — Free Base64 Encoder, Image to PDF Converter & Developer Tools</title>
+
+    <meta
+      name="description"
+      content="Free online Base64 encoder decoder, image to PDF converter, JSON & XML validator, QR code generator and 10+ developer tools. 100% browser-based — no uploads, fully private."
+    />
+
+    <meta
+      name="keywords"
+      content="base64 encoder decoder online, base64 pdf converter, encode base64 free, decode base64 online, image to pdf free, jpg to pdf online, png to pdf converter, pdf generator browser, json validator formatter, xml validator, qr code generator free, qr code scanner, text utilities online, developer tools free, browser native tools, no upload tools, privacy friendly tools, url encoder decoder, file to base64, base64 data uri"
+    />
+
     <meta name="author" content="NotJustPDF" />
+    <meta name="application-name" content="NotJustPDF" />
     <meta name="theme-color" content="#07111f" />
     <meta name="format-detection" content="telephone=no" />
-    <link rel="canonical" href="https://notjustpdf.vercel.app/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
-    <meta property="og:title" content="NotJustPDF | Free JSON, XML, PDF &amp; Developer Tools" />
-    <meta property="og:description" content="Browser-native developer utilities for JSON, XML, images, PDFs, QR codes, and Base64. Files stay local in your browser and nothing is uploaded or stored." />
+    <!-- Canonical & Language -->
+    <link rel="canonical" href="https://notjustpdf.vercel.app/" />
+    <link rel="alternate" hreflang="en" href="https://notjustpdf.vercel.app/" />
+
+    <!-- ═══════════════════════════════════════════════
+         OPEN GRAPH (Facebook, LinkedIn, WhatsApp, Slack)
+    ════════════════════════════════════════════════ -->
+    <meta property="og:title" content="NotJustPDF — Free Base64 Encoder, Image to PDF & Developer Tools" />
+    <meta property="og:description" content="Encode/decode Base64, convert images to PDF, validate JSON & XML, generate QR codes and more. All tools run in your browser — no uploads, no data stored." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="NotJustPDF" />
     <meta property="og:url" content="https://notjustpdf.vercel.app/" />
     <meta property="og:image" content="https://notjustpdf.vercel.app/og-image.svg" />
-    <meta property="og:image:alt" content="NotJustPDF developer toolkit" />
+    <meta property="og:image:alt" content="NotJustPDF — Base64, PDF, JSON, QR and developer tools" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@notjustpdf" />
-    <meta name="twitter:title" content="NotJustPDF | Free JSON, XML, PDF &amp; Developer Tools" />
-    <meta name="twitter:description" content="Browser-native developer tools for JSON, XML, images, PDFs, QR codes, and Base64. Files stay local in your browser and nothing is uploaded or stored." />
-    <meta name="twitter:image" content="https://notjustpdf.vercel.app/og-image.svg" />
+    <!-- ═══════════════════════════════════════════════
+         STRUCTURED DATA — JSON-LD
+    ════════════════════════════════════════════════ -->
 
-    <title>NotJustPDF | Free JSON, XML, PDF &amp; Developer Tools</title>
-
+    <!-- 1. WebApplication Schema -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "NotJustPDF",
+        "alternateName": "NotJustPDF Developer Tools",
         "url": "https://notjustpdf.vercel.app/",
         "image": "https://notjustpdf.vercel.app/og-image.svg",
         "applicationCategory": "DeveloperApplication",
-        "description": "A browser-native utility toolkit for JSON and XML validation, image conversion, Base64 encoding, PDF workflows, QR tools, and day-to-day developer utilities. All processing happens locally in the browser and no files are uploaded or stored.",
-        "operatingSystem": ["Any"],
+        "applicationSubCategory": "UtilitiesApplication",
+        "operatingSystem": "All",
+        "softwareVersion": "1.0.0",
         "browserRequirements": "Requires a modern browser with JavaScript enabled.",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "description": "NotJustPDF is a free, browser-native developer toolkit. Encode and decode Base64 text or files (including PDFs), convert images to PDF, validate and format JSON and XML, generate and scan QR codes, resize images, and run everyday text and URL utilities — all without uploading anything to a server.",
         "featureList": [
-          "Base64 encoder and decoder",
-          "JSON validator and formatter",
-          "XML validator and formatter",
-          "Image resizing and conversion",
-          "Image to PDF generation",
-          "QR code generator and scanner",
-          "Developer text and URL utilities"
+          "Base64 text encoder and decoder (UTF-8 safe, URL-safe RFC 4648)",
+          "File to Base64 Data URI converter — supports PDF, images, fonts, audio",
+          "Base64 PDF encoder — encode any PDF file to Base64 string",
+          "Image to PDF generator — JPG, PNG, WEBP to multi-page PDF",
+          "JSON validator and formatter with syntax highlighting",
+          "XML validator and pretty-printer",
+          "QR code generator (PNG download)",
+          "QR code scanner from image or camera",
+          "Image resizer and format converter",
+          "URL encoder and decoder",
+          "Text utilities — word count, case conversion, diff",
+          "Hash generator — MD5, SHA-1, SHA-256",
+          "No file uploads — all processing done locally in browser"
         ],
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "USD"
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
         },
-        "keywords": [
-          "browser-native tools",
-          "JSON validator",
-          "XML validator",
-          "image to PDF",
-          "base64 converter",
-          "QR code generator",
-          "developer tools",
-          "no upload",
-          "privacy-friendly utility app"
+        "creator": {
+          "@type": "Organization",
+          "name": "NotJustPDF",
+          "url": "https://notjustpdf.vercel.app/"
+        },
+        "keywords": "base64 encoder, base64 decoder, base64 pdf, image to pdf, json validator, xml validator, qr code generator, developer tools, browser tools, no upload"
+      }
+    </script>
+
+    <!-- 2. WebSite Schema with SearchAction -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "NotJustPDF",
+        "url": "https://notjustpdf.vercel.app/",
+        "description": "Free online developer tools for Base64 encoding, PDF generation, JSON/XML validation, QR codes, and more.",
+        "inLanguage": "en",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://notjustpdf.vercel.app/#{search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- 3. FAQPage Schema — targets high-volume search queries -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I encode a PDF to Base64 online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Open NotJustPDF and click 'Base64' in the sidebar. Switch to the 'File to Base64' tab, then drag and drop or select your PDF file. The tool instantly converts the PDF to a Base64 Data URI and raw Base64 string in your browser — no upload required."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I convert an image to PDF for free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Go to the 'PDF Studio' section in NotJustPDF. Upload one or more images (JPG, PNG, WEBP), arrange the page order by dragging, and click 'Generate PDF'. A high-quality multi-page PDF is created instantly in your browser and downloaded to your device."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is NotJustPDF safe? Are my files uploaded to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, NotJustPDF is completely safe. All processing — Base64 encoding, PDF generation, image resizing, JSON validation — happens directly inside your browser using JavaScript. No files are uploaded to any server, and no data is stored or logged."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What file types can I convert to Base64?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "NotJustPDF supports any file type for Base64 conversion — images (PNG, JPG, WEBP, GIF), PDFs, SVGs, fonts (TTF, WOFF), audio files, and arbitrary binary files. The output is a full Data URI ready to embed in HTML or CSS, plus a raw Base64 string."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use NotJustPDF to decode a Base64 string back to a file?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. In the Base64 tool, switch to 'Decode' mode and paste your Base64 string. The tool decodes it and displays the text output. You can also click 'Download as File' to save the decoded binary data directly to your device."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does NotJustPDF work offline?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "NotJustPDF is browser-native and runs entirely client-side. After the initial page load, the Base64, JSON, XML, and text tools work without an internet connection. The PDF generation and QR tools also run offline after first load."
+            }
+          }
         ]
       }
     </script>
 
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..800;1,14..32,400..800&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />

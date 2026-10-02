@@ -1,13 +1,90 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
   <rect width="1200" height="630" fill="#07111F"/>
-  <rect x="56" y="56" width="1088" height="518" rx="30" fill="#111C2E" stroke="#2BA3FF" stroke-width="2"/>
-  <circle cx="162" cy="180" r="42" fill="#66D9EF" fill-opacity="0.18"/>
-  <circle cx="1030" cy="420" r="56" fill="#8B5CF6" fill-opacity="0.18"/>
-  <rect x="116" y="130" width="240" height="60" rx="18" fill="#1A2C45"/>
-  <text x="150" y="170" fill="#E5F3FF" font-family="Arial, sans-serif" font-size="30" font-weight="700">NotJustPDF</text>
-  <text x="116" y="282" fill="#F8FBFF" font-family="Arial, sans-serif" font-size="62" font-weight="700">Free JSON, XML, PDF</text>
-  <text x="116" y="350" fill="#F8FBFF" font-family="Arial, sans-serif" font-size="62" font-weight="700">&amp; Developer Tools</text>
-  <text x="116" y="420" fill="#9CC7EA" font-family="Arial, sans-serif" font-size="28">Base64 • Image • QR • Validation • Utilities</text>
-  <rect x="116" y="474" width="280" height="58" rx="16" fill="#2BA3FF"/>
-  <text x="173" y="512" fill="#03131E" font-family="Arial, sans-serif" font-size="26" font-weight="700">Open Toolkit</text>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#1a2d45" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#1a2d45" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#1a2d45" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#1a2d45" stroke-width="1"/>
+
+  <!-- Main card -->
+  <rect x="48" y="48" width="1104" height="534" rx="28" fill="#0d1b2a" stroke="#1e3351" stroke-width="1.5"/>
+
+  <!-- Cyan glow accent (Base64 side) -->
+  <ellipse cx="220" cy="180" rx="160" ry="100" fill="#22d3ee" fill-opacity="0.07"/>
+  <!-- Purple glow accent (PDF side) -->
+  <ellipse cx="980" cy="440" rx="180" ry="120" fill="#7c3aed" fill-opacity="0.09"/>
+
+  <!-- Brand badge -->
+  <rect x="80" y="76" width="196" height="44" rx="14" fill="#112237"/>
+  <rect x="80" y="76" width="196" height="44" rx="14" stroke="#22d3ee" stroke-width="1.2" stroke-opacity="0.6"/>
+  <text x="100" y="105" fill="#22d3ee" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="0.5">NotJustPDF</text>
+
+  <!-- Main headline -->
+  <text x="80" y="210" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="68" font-weight="800" letter-spacing="-1">Free Base64 Encoder</text>
+  <text x="80" y="288" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="68" font-weight="800" letter-spacing="-1">&amp; PDF Developer Tools</text>
+
+  <!-- Subheadline -->
+  <text x="80" y="345" fill="#9bb0c8" font-family="Arial, sans-serif" font-size="28">Encode • Decode • Convert • Validate • Generate QR</text>
+
+  <!-- Divider -->
+  <line x1="80" y1="375" x2="680" y2="375" stroke="#1e3351" stroke-width="1.5"/>
+
+  <!-- Feature chips row -->
+  <!-- Base64 chip (cyan) -->
+  <rect x="80" y="393" width="152" height="40" rx="20" fill="#0d2535" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="156" y="419" fill="#22d3ee" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">⟨⟩ Base64</text>
+
+  <!-- PDF chip (purple) -->
+  <rect x="244" y="393" width="142" height="40" rx="20" fill="#1a1035" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="315" y="419" fill="#a78bfa" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">📄 PDF Studio</text>
+
+  <!-- JSON chip (amber) -->
+  <rect x="398" y="393" width="114" height="40" rx="20" fill="#1c1500" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="455" y="419" fill="#fbbf24" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">{ } JSON</text>
+
+  <!-- QR chip (green) -->
+  <rect x="524" y="393" width="120" height="40" rx="20" fill="#0a1f10" stroke="#34d399" stroke-width="1.5"/>
+  <text x="584" y="419" fill="#34d399" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">▦ QR Code</text>
+
+  <!-- More chip -->
+  <rect x="656" y="393" width="130" height="40" rx="20" fill="#111c2e" stroke="#4b5e75" stroke-width="1.5"/>
+  <text x="721" y="419" fill="#9bb0c8" font-family="Arial, sans-serif" font-size="17" font-weight="600" text-anchor="middle">+ 4 more tools</text>
+
+  <!-- Privacy badge -->
+  <rect x="80" y="456" width="290" height="50" rx="14" fill="#0b1e10"/>
+  <rect x="80" y="456" width="290" height="50" rx="14" stroke="#34d399" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="100" y="476" fill="#34d399" font-family="Arial, sans-serif" font-size="13" font-weight="700">🔒 100% PRIVATE</text>
+  <text x="100" y="495" fill="#5fa87a" font-family="Arial, sans-serif" font-size="13">No uploads · Files stay in your browser</text>
+
+  <!-- CTA button -->
+  <rect x="392" y="456" width="230" height="50" rx="14" fill="#7c3aed"/>
+  <text x="507" y="488" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle">Open Free Toolkit →</text>
+
+  <!-- URL -->
+  <text x="1120" y="570" fill="#4b5e75" font-family="Arial, sans-serif" font-size="16" text-anchor="end">notjustpdf.vercel.app</text>
+
+  <!-- Right-side decorative code block -->
+  <rect x="840" y="90" width="312" height="200" rx="14" fill="#071220" stroke="#1e3351" stroke-width="1.2"/>
+  <text x="860" y="115" fill="#4b5e75" font-family="Arial, sans-serif" font-size="13">// Base64 PDF in browser</text>
+  <text x="860" y="140" fill="#22d3ee" font-family="Arial, sans-serif" font-size="13" font-weight="600">const</text>
+  <text x="910" y="140" fill="#e5f1ff" font-family="Arial, sans-serif" font-size="13"> b64 = btoa(pdfBytes);</text>
+  <text x="860" y="165" fill="#22d3ee" font-family="Arial, sans-serif" font-size="13" font-weight="600">const</text>
+  <text x="910" y="165" fill="#e5f1ff" font-family="Arial, sans-serif" font-size="13"> uri  = </text>
+  <text x="860" y="190" fill="#fbbf24" font-family="Arial, sans-serif" font-size="13">  `data:application/pdf;</text>
+  <text x="860" y="210" fill="#fbbf24" font-family="Arial, sans-serif" font-size="13">   base64,${b64}`;</text>
+  <text x="860" y="250" fill="#34d399" font-family="Arial, sans-serif" font-size="13">✓ No server. Fully private.</text>
+
+  <!-- Image→PDF decorative stacked pages -->
+  <rect x="860" y="315" width="110" height="145" rx="8" fill="#0d1b2a" stroke="#7c3aed" stroke-width="1.5"/>
+  <rect x="878" y="300" width="110" height="145" rx="8" fill="#0d1b2a" stroke="#7c3aed" stroke-width="1" stroke-opacity="0.5"/>
+  <rect x="896" y="285" width="110" height="145" rx="8" fill="#0d1b2a" stroke="#7c3aed" stroke-width="1" stroke-opacity="0.3"/>
+  <text x="916" y="385" fill="#7c3aed" font-family="Arial, sans-serif" font-size="36" text-anchor="middle">📄</text>
+  <text x="916" y="415" fill="#9bb0c8" font-family="Arial, sans-serif" font-size="13" text-anchor="middle">Image→PDF</text>
+
+  <!-- Arrow between code and PDF icon -->
+  <text x="990" y="390" fill="#4b5e75" font-family="Arial, sans-serif" font-size="28">→</text>
+  <rect x="1020" y="340" width="112" height="112" rx="12" fill="#112237" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="1076" y="412" fill="#22d3ee" font-family="Arial, sans-serif" font-size="52" text-anchor="middle">⊞</text>
 </svg>
