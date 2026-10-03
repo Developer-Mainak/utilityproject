@@ -81,6 +81,7 @@ export default function ImageTool() {
   const [resizeFile,    setResizeFile]    = useState(null);
   const [resizeW,       setResizeW]       = useState(1200);
   const [resizeH,       setResizeH]       = useState(800);
+  const [resizeFormat,  setResizeFormat]  = useState('image/jpeg');
   const [keepW,         setKeepW]         = useState(true);
   const [keepH,         setKeepH]         = useState(true);
   const [resizePreview, setResizePreview] = useState(null);
@@ -147,9 +148,19 @@ export default function ImageTool() {
       const img     = await loadImg(dataUrl);
       const w = keepW ? img.width  : Math.max(1, Number(resizeW));
       const h = keepH ? img.height : Math.max(1, Number(resizeH));
-      const canvas = getSharplyScaledCanvas(img, w, h);
+      let canvas = getSharplyScaledCanvas(img, w, h);
+      if (resizeFormat === 'image/jpeg') {
+        const jpegCanvas = document.createElement('canvas');
+        jpegCanvas.width = w;
+        jpegCanvas.height = h;
+        const jpegCtx = jpegCanvas.getContext('2d');
+        jpegCtx.fillStyle = '#fff';
+        jpegCtx.fillRect(0, 0, w, h);
+        jpegCtx.drawImage(canvas, 0, 0);
+        canvas = jpegCanvas;
+      }
       resizedCanvas.current = canvas;
-      const previewUrl = canvas.toDataURL('image/png');
+      const previewUrl = canvas.toDataURL(resizeFormat);
       setResizePreview(previewUrl);
       setResizeMeta({ label: 'Resized', w, h, size: 'Ready to download' });
       setResizeStatus({ text: `✓ Resized to ${w} × ${h} px`, ok: true });
@@ -161,9 +172,10 @@ export default function ImageTool() {
   const handleDownloadResized = () => {
     const c = resizedCanvas.current;
     if (!c) return;
+    const ext = resizeFormat === 'image/png' ? 'png' : resizeFormat === 'image/webp' ? 'webp' : 'jpg';
     const a = Object.assign(document.createElement('a'), {
-      href: c.toDataURL('image/png'),
-      download: 'resized.png',
+      href: c.toDataURL(resizeFormat),
+      download: `resized.${ext}`,
     });
     a.click();
   };
@@ -377,6 +389,15 @@ export default function ImageTool() {
               onChange={(e) => handleResizeFileSelect(e.target.files?.[0] ?? null)}
             />
           </div>
+
+          <label>
+            Output format
+            <select value={resizeFormat} onChange={(e) => setResizeFormat(e.target.value)}>
+              <option value="image/jpeg">JPG / JPEG</option>
+              <option value="image/webp">WEBP</option>
+              <option value="image/png">PNG</option>
+            </select>
+          </label>
 
           <div className="resize-controls">
             <div className="input-pair">
